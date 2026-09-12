@@ -41,6 +41,85 @@ async function putRedemptionIndex(env,x){
 }
 function rid(){return `reverse_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;}
 
+/* Shared grant logic — used by the mikael_reverse_token_award POST handler
+   AND by the /token Telegram command. Keeps inventory + history in sync
+   no matter which path awarded the token. */
+async function awardMikaelToken(env,name,emoji,desc,source){
+  name=String(name||"").trim();
+  if(!name)throw new Error("Missing token name");
+  emoji=String(emoji||"🔄");
+  desc=String(desc||"");
+  const state=await getMikaelTokenState(env);
+  state.inventory=state.inventory||{};
+  state.history=Array.isArray(state.history)?state.history:[];
+  state.inventory[name]=Number(state.inventory[name]||0)+1;
+  state.history.push({type:"earned",token:name,source:String(source||"LizzyOS Daily Reward"),at:new Date().toISOString()});
+  await putMikaelTokenState(env,state);
+  return {state,name,emoji,desc,count:state.inventory[name]};
+}
+
+/* Full Reverse Token catalog (mirrors the REVERSE array in script.js) so the
+   /token Telegram command can fuzzy-match a search term to a real token. */
+const MIKAEL_TOKEN_CATALOG=[
+["🥤","Reverse Token — Lizzy Owes Mikael a Monster","Lizzy owes Mikael one Monster."],
+["🫂","Reverse Token — Mikael Gets a Hug","Lizzy owes Mikael one proper hug."],
+["🍦","Reverse Token — Mikael Gets Ice Cream","Lizzy owes Mikael one ice cream."],
+["🍰","Reverse Token — Mikael Gets Dessert","Lizzy owes Mikael one dessert."],
+["🍫","Reverse Token — Mikael Gets a Chocolate","Lizzy owes Mikael one chocolate."],
+["🍬","Reverse Token — Mikael Gets Sweets","Lizzy owes Mikael some sweets."],
+["🥤","Reverse Token — Mikael Gets a Coke","Lizzy owes Mikael one Coke."],
+["☕","Reverse Token — Mikael Gets a Drink","Lizzy owes Mikael one reasonable drink."],
+["🍔","Reverse Token — Mikael Gets a Snack","Lizzy owes Mikael one snack."],
+["🍟","Reverse Token — Mikael Gets Fries","Lizzy owes Mikael some fries."],
+["🎬","Reverse Token — Mikael Picks the Movie","Mikael chooses the movie for one movie night."],
+["📺","Reverse Token — Mikael Picks What We Watch","Mikael chooses what you watch once."],
+["🎵","Reverse Token — Mikael Controls the Aux","Mikael controls the music for one reasonable trip or session."],
+["🎶","Reverse Token — Mikael Picks One Song","Mikael chooses one song, no skipping."],
+["🍽️","Reverse Token — Mikael Picks Where We Eat","Mikael chooses where to eat once."],
+["🎯","Reverse Token — Mikael Picks the Activity","Mikael chooses one reasonable activity."],
+["🎳","Reverse Token — Mikael Picks the Next Date Activity","Mikael chooses the next activity date."],
+["📸","Reverse Token — Mikael Gets One Nice Photo","Lizzy owes Mikael one nice photo."],
+["🤳","Reverse Token — Mikael Gets One Selfie Together","One selfie together, Mikael's choice of moment."],
+["💌","Reverse Token — Mikael Gets a Nice Message","Lizzy owes Mikael one genuinely nice message."],
+["📝","Reverse Token — Mikael Gets a Little Letter","Lizzy owes Mikael one little letter."],
+["💬","Reverse Token — Lizzy Answers One Random Question","Lizzy answers one harmless random question properly."],
+["🤔","Reverse Token — Mikael Gets One Honest Answer","Mikael gets one honest answer to a reasonable question."],
+["📞","Reverse Token — Mikael Gets a Call","Mikael gets one reasonable call."],
+["🎙️","Reverse Token — Mikael Gets a Voice Note","Lizzy owes Mikael one voice note."],
+["😂","Reverse Token — Mikael Gets One Joke","Lizzy owes Mikael one joke."],
+["😌","Reverse Token — Lizzy Says Something Nice About Mikael","Lizzy must say one genuinely nice thing about Mikael."],
+["👑","Reverse Token — Mikael Wins One Harmless Argument","Mikael automatically wins one harmless argument."],
+["🧑‍⚖️","Reverse Token — No Bullying Mikael for One Hour","Mikael gets one full hour of protection from bullying."],
+["🦵","Reverse Token — Mikael's Knees Are Protected for One Day","No knee slander for one full day."],
+["😭","Reverse Token — No You're So Annoying for One Hour","Lizzy cannot say 'You're so annoying' to Mikael for one hour."],
+["🏆","Reverse Token — Lizzy Admits Mikael Was Right","Lizzy must admit Mikael was right once."],
+["😇","Reverse Token — Be Nice to Mikael for 30 Minutes","Thirty uninterrupted minutes of kindness to Mikael."],
+["👓","Reverse Token — Four Eyes Compliments Mr Perfect","Four Eyes owes Mr Perfect one compliment."],
+["😭","Reverse Token — Mikael Gets One Free Roast","Mikael gets one consequence-free playful roast."],
+["🃏","Reverse Token — Mikael Gets One UNO Reverse","Mikael can reverse one playful situation."],
+["🎲","Reverse Token — Mikael Chooses","Mikael chooses between two reasonable options."],
+["🤝","Reverse Token — One Small Favour","Lizzy owes Mikael one small reasonable favour."],
+["🛋️","Reverse Token — Mikael Gets the Comfortable Seat","Mikael gets first choice of the comfortable seat once."],
+["🎮","Reverse Token — Mikael Picks the Game","Mikael chooses the game once."],
+["⚽","Reverse Token — Watch Football With Mikael","One football watch session with Mikael."],
+["💤","Reverse Token — Mikael Gets a Peace & Quiet Pass","One reasonable period of uninterrupted peace and quiet."],
+["🥺","Reverse Token — Mikael Gets One Please","Lizzy has to ask nicely once. Very serious legislation."],
+["👑","Reverse Token — Mr Perfect Privilege","One small reasonable Mr Perfect privilege."]
+];
+function findMikaelToken(query){
+  query=String(query||"").trim().toLowerCase();
+  if(!query)return null;
+  const strip=s=>s.replace(/^reverse token\s*—?\s*/i,"").toLowerCase();
+  // exact match on the short label first, then substring, then loosest "every word appears" match.
+  let hit=MIKAEL_TOKEN_CATALOG.find(([,name])=>strip(name)===query);
+  if(hit)return hit;
+  hit=MIKAEL_TOKEN_CATALOG.find(([,name])=>strip(name).includes(query)||query.includes(strip(name)));
+  if(hit)return hit;
+  const words=query.split(/\s+/).filter(Boolean);
+  hit=MIKAEL_TOKEN_CATALOG.find(([,name])=>{const n=strip(name);return words.every(w=>n.includes(w));});
+  return hit||null;
+}
+
 
 /* ===== 💰 MICKY BANK CLAIMABLE DEPOSITS =====
    A deposit created by Mikael sits in KV as "pending" forever (30 day TTL)
@@ -236,11 +315,42 @@ async function answerLatestUnansweredFromLizzy(env,replyText,source){
   return t;
 }
 
+/* =========================================================
+   🖤 MIKAEL HQ — LETTERS & CHESS (isolated 2-player build)
+   KV binding: LIZZY_CLAIMS (existing)
+   New secret: MIKAEL_HQ_KEY
+   ========================================================= */
+const HQ_KEY_HEADER="X-Mikael-HQ-Key";
+const HQ_LETTER_INDEX="hq:letters:index:v1";
+const HQ_MESSAGE_INDEX="hq:messages:index:v1";
+const HQ_ACTIVITY_INDEX="hq:activity:index:v1";
+const HQ_CHESS_KEY="hq:chess:v1";
+const HQ_CHESS_HELP_INDEX="hq:chess:help:index:v1";
+const arrKV=async(env,key)=>{const x=await env.LIZZY_CLAIMS.get(key,{type:"json"});return Array.isArray(x)?x:[]};
+const saveArr=async(env,key,x)=>env.LIZZY_CLAIMS.put(key,JSON.stringify(x.slice(-300)));
+const hqAuth=(req,env,body=null)=>{
+  const header=String(req.headers.get(HQ_KEY_HEADER)||"");
+  const supplied=header||String(body?.hqKey||"");
+  const expected=String(env?.MIKAEL_HQ_KEY||"");
+  return !!(supplied&&expected&&supplied===expected);
+};
+const hqOnly=(req,env,body=null)=>hqAuth(req,env,body);
+const hqId=p=>`hq:${p}:${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
+async function hqActivity(env,type,text,meta={}){
+ const item={id:hqId("activity"),type:String(type||"Activity").slice(0,100),text:String(text||"").slice(0,1200),meta,createdAt:new Date().toISOString()};
+ const xs=await arrKV(env,HQ_ACTIVITY_INDEX);xs.push(item);await saveArr(env,HQ_ACTIVITY_INDEX,xs);return item;
+}
+async function hqLetters(env){const xs=await arrKV(env,HQ_LETTER_INDEX);return xs.sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));}
+async function hqMessages(env){const xs=await arrKV(env,HQ_MESSAGE_INDEX);return xs.sort((a,b)=>String(a.createdAt).localeCompare(String(b.createdAt)));}
+const defaultChess=()=>({id:"chess-main",fen:"start",pgn:"",turn:"w",status:"active",lastMove:null,updatedAt:new Date().toISOString()});
+
 export default{async fetch(req,env){
  if(req.method==="OPTIONS")return json({ok:true});
  const u=new URL(req.url);
 
  if(req.method==="GET"){
+   if(u.searchParams.get("action")==="coop_chess"){const state=await env.LIZZY_CLAIMS.get(HQ_CHESS_KEY,{type:"json"})||defaultChess();return json({success:true,state});}
+   if(u.searchParams.get("action")==="lizzy_messages"){const messages=await hqMessages(env);return json({success:true,messages:messages.filter(x=>x.status!=="handled").slice(-50)});}
    if(u.searchParams.get("mikaelTokens")==="1"){
      const state=await getMikaelTokenState(env);
      return json({success:true,state});
@@ -354,6 +464,26 @@ export default{async fetch(req,env){
        }
        return json({ok:true});
      }
+     // /token <search> — fuzzy-find a Reverse Token by name and grant it straight
+     // into Mikael's live inventory, no app needed. Example: /token nice photo
+     const tokenCmd=txt.match(/^\/token(?:@\w+)?\s+([\s\S]+)$/i);
+     if(tokenCmd){
+       const hit=findMikaelToken(tokenCmd[1]);
+       if(!hit){
+         await tg(env,"sendMessage",{chat_id:chat,text:`❌ No Reverse Token matches "${tokenCmd[1].trim()}".\nTry a shorter search, e.g. /token photo`});
+         return json({ok:true});
+       }
+       const [emoji,name,desc]=hit;
+       const {count}=await awardMikaelToken(env,name,emoji,desc,"Telegram /token");
+       await tg(env,"sendMessage",{chat_id:chat,text:`🔄 TOKEN GRANTED\n\n${emoji} ${name}\n${desc}\n\nYou now have ×${count} of this one. Redeem it anytime from your Token Control.`});
+       return json({ok:true});
+     }
+     // /tokens — list the full Reverse Token catalog so you know what to search for.
+     if(/^\/tokens(?:@\w+)?$/i.test(txt)){
+       const lines=MIKAEL_TOKEN_CATALOG.map(([emoji,name])=>`${emoji} ${name.replace(/^Reverse Token\s*—\s*/i,"")}`);
+       await tg(env,"sendMessage",{chat_id:chat,text:`🔄 REVERSE TOKEN CATALOG\n\n${lines.join("\n")}\n\nGrant one with /token <search>`});
+       return json({ok:true});
+     }
 
      const claimId=await env.LIZZY_CLAIMS.get(`counter_wait:${chat}`);
      if(claimId){
@@ -397,6 +527,108 @@ const eventType=String(b?.type||"").trim();
   }
 }
 
+
+/* =========================================================
+   🖤 MIKAEL HQ — LETTERS & CHESS ACTIONS (isolated build)
+   Lizzy side (no key): submit_letter, lizzy_message_seen,
+                        lizzy_chess_move, lizzy_chess_help
+   Mikael HQ side (needs MIKAEL_HQ_KEY): hq_letters, reply_letter,
+                        chess_state, chess_move, chess_reset,
+                        resolve_chess_help, send_chess_hint
+   ========================================================= */
+if(b.action==="hq_letters"){
+  if(!hqOnly(req,env,b))return json({success:false,error:"Unauthorized"},401);
+  return json({success:true,letters:await hqLetters(env)});
+}
+if(b.action==="chess_state"){
+  if(!hqOnly(req,env,b))return json({success:false,error:"Unauthorized"},401);
+  const state=await env.LIZZY_CLAIMS.get(HQ_CHESS_KEY,{type:"json"})||defaultChess();
+  const ids=await arrKV(env,HQ_CHESS_HELP_INDEX),requests=[];
+  for(const x of ids){const r=await env.LIZZY_CLAIMS.get(`hq:chesshelp:${x}`,{type:"json"});if(r&&r.status==="open")requests.push(r);}
+  return json({success:true,state,requests});
+}
+if(b.action==="submit_letter"){
+  const text=S(b.text,4000),subject=S(b.subject||"A letter for Mikael",120),from=S(b.from||"Lizzy",60);
+  if(!text)return json({success:false,error:"Letter is empty"},400);
+  const letter={id:hqId("letter"),subject,text,from,status:"unread",reply:null,createdAt:new Date().toISOString()};
+  const xs=await hqLetters(env);xs.push(letter);await saveArr(env,HQ_LETTER_INDEX,xs);
+  await hqActivity(env,"💌 New Letter",`Lizzy sent a letter: ${subject}`,{letterId:letter.id});
+  await tg(env,"sendMessage",{chat_id:env.TELEGRAM_CHAT_ID,text:`💌 NEW LETTER FROM LIZZY\n\n${subject}\n\n${text.slice(0,1800)}\n\nOpen Mikael HQ to reply.`}).catch(()=>{});
+  return json({success:true,letter});
+}
+if(b.action==="reply_letter"){
+  if(!hqOnly(req,env,b))return json({success:false,error:"Unauthorized"},401);
+  const lid=S(b.id,120),reply=S(b.reply,4000),xs=await hqLetters(env),l=xs.find(x=>x.id===lid);
+  if(!l)return json({success:false,error:"Letter not found"},404);
+  l.reply=reply;l.status="replied";l.repliedAt=new Date().toISOString();
+  await saveArr(env,HQ_LETTER_INDEX,xs);
+  const msgs=await hqMessages(env);
+  msgs.push({id:hqId("message"),kind:"letter_reply",text:`💌 Mikael replied to your letter "${l.subject}":\n\n${reply}`,status:"pending",createdAt:new Date().toISOString(),letterId:lid});
+  await saveArr(env,HQ_MESSAGE_INDEX,msgs);
+  await hqActivity(env,"🖤 Letter Reply",`Mikael replied to ${l.subject}`,{letterId:lid});
+  return json({success:true,letter:l});
+}
+if(b.action==="clear_letters"){
+  if(!hqOnly(req,env,b))return json({success:false,error:"Unauthorized"},401);
+  await saveArr(env,HQ_LETTER_INDEX,[]);
+  await hqActivity(env,"🧹 Letters Cleared","All letters were cleared from HQ.");
+  return json({success:true});
+}
+if(b.action==="lizzy_message_seen"){
+  const xs=await hqMessages(env),m=xs.find(x=>x.id===S(b.id,120));
+  if(m)m.status="seen";
+  await saveArr(env,HQ_MESSAGE_INDEX,xs);
+  return json({success:true});
+}
+if(b.action==="lizzy_chess_move"){
+  const current=await env.LIZZY_CLAIMS.get(HQ_CHESS_KEY,{type:"json"})||defaultChess();
+  if(current.fen&&current.fen!=="start"&&current.turn&&current.turn!=="w")return json({success:false,error:"It's not your turn yet"},409);
+  const state={id:"chess-main",fen:S(b.fen,200),pgn:S(b.pgn,8000),turn:S(b.turn,1)||"b",status:"active",lastMove:S(b.lastMove,30),updatedAt:new Date().toISOString()};
+  await env.LIZZY_CLAIMS.put(HQ_CHESS_KEY,JSON.stringify(state));
+  await hqActivity(env,"♟️ Chess Move",`Lizzy played ${state.lastMove||"a move"}.`,{fen:state.fen});
+  await tg(env,"sendMessage",{chat_id:env.TELEGRAM_CHAT_ID,text:`♟️ Lizzy played ${state.lastMove||"a move"} in Our World. Your turn.`}).catch(()=>{});
+  return json({success:true,state});
+}
+if(b.action==="chess_move"){
+  if(!hqOnly(req,env,b))return json({success:false,error:"Unauthorized"},401);
+  const state={id:"chess-main",fen:S(b.fen,200),pgn:S(b.pgn,8000),turn:S(b.turn,1)||"w",status:"active",lastMove:S(b.lastMove,30),updatedAt:new Date().toISOString()};
+  await env.LIZZY_CLAIMS.put(HQ_CHESS_KEY,JSON.stringify(state));
+  await hqActivity(env,"♟️ Chess Move",`Mikael played ${state.lastMove||"a move"}.`,{fen:state.fen});
+  return json({success:true,state});
+}
+if(b.action==="chess_reset"){
+  if(!hqOnly(req,env,b))return json({success:false,error:"Unauthorized"},401);
+  const state=defaultChess();
+  await env.LIZZY_CLAIMS.put(HQ_CHESS_KEY,JSON.stringify(state));
+  await saveArr(env,HQ_CHESS_HELP_INDEX,[]);
+  await hqActivity(env,"♟️ Chess Reset","A new co-op chess game was started.");
+  return json({success:true,state});
+}
+if(b.action==="lizzy_chess_help"){
+  const text=S(b.text,500);
+  if(!text)return json({success:false,error:"Request empty"},400);
+  const r={id:hqId("help"),text,status:"open",createdAt:new Date().toISOString()};
+  await env.LIZZY_CLAIMS.put(`hq:chesshelp:${r.id}`,JSON.stringify(r),{expirationTtl:86400});
+  const ids=await arrKV(env,HQ_CHESS_HELP_INDEX);ids.push(r.id);await saveArr(env,HQ_CHESS_HELP_INDEX,ids);
+  await hqActivity(env,"♟️ Chess Help",`Lizzy asked: ${text}`,{requestId:r.id});
+  await tg(env,"sendMessage",{chat_id:env.TELEGRAM_CHAT_ID,text:`♟️ LIZZY NEEDS CHESS HELP\n\n${text}`}).catch(()=>{});
+  return json({success:true,request:r});
+}
+if(b.action==="resolve_chess_help"){
+  if(!hqOnly(req,env,b))return json({success:false,error:"Unauthorized"},401);
+  const lid=S(b.id,120),r=await env.LIZZY_CLAIMS.get(`hq:chesshelp:${lid}`,{type:"json"});
+  if(r){r.status="handled";await env.LIZZY_CLAIMS.put(`hq:chesshelp:${lid}`,JSON.stringify(r),{expirationTtl:86400});}
+  return json({success:true});
+}
+if(b.action==="send_chess_hint"){
+  if(!hqOnly(req,env,b))return json({success:false,error:"Unauthorized"},401);
+  const text=S(b.text,1000);
+  if(!text)return json({success:false,error:"Hint empty"},400);
+  const m={id:hqId("message"),kind:"message",text:`🎓 Mikael's chess tip: ${text}`,status:"pending",createdAt:new Date().toISOString()};
+  const xs=await hqMessages(env);xs.push(m);await saveArr(env,HQ_MESSAGE_INDEX,xs);
+  await hqActivity(env,"🎓 Chess Hint","Mikael sent Lizzy a chess tip.");
+  return json({success:true});
+}
 
 async function notifyTelegram(text,type=eventType,reply_markup=null){
   const payload={
@@ -1329,13 +1561,9 @@ ${S(
 }
 
  if(b.type==="mikael_reverse_token_award"){
-   const name=String(b.name||"").trim(),emoji=String(b.emoji||"🔄"),desc=String(b.desc||"").trim();
+   const name=String(b.name||"").trim();
    if(!name)return json({success:false,error:"Missing token name"},400);
-   const state=await getMikaelTokenState(env);
-   state.inventory=state.inventory||{};state.history=Array.isArray(state.history)?state.history:[];
-   state.inventory[name]=Number(state.inventory[name]||0)+1;
-   state.history.push({type:"earned",token:name,source:String(b.source||"LizzyOS Daily Reward"),at:new Date().toISOString()});
-   await putMikaelTokenState(env,state);
+   const {state}=await awardMikaelToken(env,name,b.emoji,b.desc,b.source);
    return json({success:true,state});
  }
  if(b.type==="mikael_reverse_token_sync"){
