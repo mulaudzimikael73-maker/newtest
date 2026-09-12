@@ -1,0 +1,22 @@
+NEW ARCHITECTURE
+🎁 Interactive Rewards is now a standalone desktop app.
+
+VIP Status:
+- Starts in Interactive Rewards, not Token Jar.
+- Confirm activation.
+- Direct 24-hour state.
+- Full-screen VIP activation.
+- Confetti.
+- Live VIP badge/countdown.
+- Existing VIP privilege state mirrored for the approved VIP features.
+- Telegram notification does not control activation.
+
+Mystery Rare Box:
+- Lives in Interactive Rewards.
+- Money / Secrets / Mikael chooser is visible.
+- Final Rare Box outcome logic is intentionally the next step after VIP testing.
+
+UPLOAD:
+index.html
+script.js
+style.css

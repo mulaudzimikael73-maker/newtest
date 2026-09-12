@@ -1,0 +1,19 @@
+PRESENTATION-SAFE INTERACTIVE REWARDS FIX
+
+Root cause fixed:
+- The previous Interactive Rewards HTML was physically placed AFTER script.js.
+- Therefore the script could not attach listeners to the folder/window/ENTER button at load time.
+- The previous icon was also a floating dynamically-created element instead of a real LizzyOS desktop icon.
+
+This build:
+- Adds Interactive Rewards as a real desktop icon in the normal desktop grid.
+- Places the Interactive Rewards window, VIP activation screen and VIP Control Panel BEFORE script.js.
+- Uses direct event listeners on real DOM elements.
+- Resets special reward presentation state to VIP ×1 ready + Mystery Rare Box ×1 unopened using a new V3 key.
+- Removes VIP/Mystery Rare Box from Token Jar definitions and clears old saved special-token entries once.
+- Routes future Daily Reward VIP/Rare Box wins directly to Interactive Rewards.
+- VIP: Activate -> 24h state -> celebration -> Enter VIP Mode -> VIP Control Panel.
+- VIP badge opens VIP Control Panel while active.
+- Rare Box is visible but final outcome wiring is intentionally left for the next step.
+
+UPLOAD: index.html, script.js, style.css

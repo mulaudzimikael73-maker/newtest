@@ -1,0 +1,24 @@
+V4.12 — actual root cause fix
+
+FOUND:
+The four app functions were declared INSIDE an IIFE in living-desktop.js.
+V4.11's later binder was OUTSIDE that IIFE and tried to call openCourt/openRps/
+openAssistant/openDay directly. Those names were out of scope, so the binding
+code failed at runtime even though node --check correctly reported valid syntax.
+
+FIX:
+- The functions are now explicitly exposed through window.LizzyFunApps while
+  still inside their original scope.
+- Lizzy Assistant and How's Today remain desktop apps and bind through that API.
+- Cody Court and Rock Paper Scissors were removed from the desktop and added to
+  the site's EXISTING Games & Quizzes folder as native game cards.
+- Cody wallpaper no longer relies on an observer guessing which reader is open.
+  The exact purchased-file renderer applies the Cody classes at the moment a
+  Cody file is opened.
+
+Batman wallpaper remains unchanged because you confirmed it works.
+
+UPLOAD:
+Safest: replace entire repo contents with this extracted ZIP.
+Or replace index.html, living-desktop.js and style.css.
+Keep both JPEG assets.

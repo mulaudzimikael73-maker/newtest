@@ -1,0 +1,20 @@
+Vault is a random-prize feature inside Secret Shelf.
+
+Access:
+- Successful Vault bid: Mikael accepts -> Vault opens -> one random prize.
+- Free Vault Token: Lizzy opens immediately -> one random prize.
+- Vault bid is an offer and is not deducted automatically.
+
+Prize pool:
+Common: +10 MB, +15 MB, Seed Pack, Second Chance.
+Rare: +25 MB, Song Exchange, Voice Note Request, Truth Card.
+Epic: Question Call, Bank Heist (30-60 MB).
+Legendary: Vault Jackpot (+75 MB), Mikael's Wild Card, The Queen's Cut (+50 MB).
+
+Odds: Common 45%, Rare 30%, Epic 17%, Legendary 8%.
+
+Every prize routes to its real system:
+money -> Bank of Micky
+seed -> Garden
+Second Chance -> Token Jar rerollCredits
+interaction tokens -> Token Jar

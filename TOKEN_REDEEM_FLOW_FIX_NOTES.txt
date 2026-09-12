@@ -1,0 +1,11 @@
+Fixed Token Jar special redemption flow.
+
+- Redeem button disables immediately.
+- Cancel disables while processing.
+- Telegram notification still sends.
+- Standard Redeem Token window closes automatically.
+- VIP activation screen opens after the window closes.
+- Mystery Rare Box chooser opens after the window closes.
+- Prevents accidental double redemption.
+
+Upload: script.js and index.html only.

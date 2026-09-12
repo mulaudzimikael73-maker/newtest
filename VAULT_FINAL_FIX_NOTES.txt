@@ -1,0 +1,19 @@
+VAULT FINAL FIX
+
+The Vault is now a random-prize feature INSIDE Secret Shelf.
+
+Two access paths:
+1. Free Vault Token: Daily Reward's lizzyRewardPerksV1.vaultFree is recognized and opens the Vault immediately.
+2. Vault bid: bid is sent to Cloudflare/Telegram. Mikael accepts the bid. The client polls for acceptance and opens the Vault, granting one random prize.
+
+No individual Secret Shelf item is claimed by the Free Vault Token.
+
+Random prize pool:
+Common: +10 MB, +15 MB, Seed Pack, Second Chance.
+Rare: +25 MB, Song Exchange, Voice Note Request, Truth Card.
+Epic: Question Call, Bank Heist (30-60 MB).
+Legendary: Vault Jackpot (+75 MB), Mikael's Wild Card, The Queen's Cut (+50 MB).
+
+Odds: 45% common / 30% rare / 17% epic / 8% legendary.
+
+All JavaScript files pass node --check.

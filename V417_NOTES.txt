@@ -1,0 +1,15 @@
+V4.17 — Lizzy Assistant answer-space adjustment only.
+
+Changed:
+- Answer box minimum height increased to 110px.
+- More internal padding.
+- Better line spacing.
+- Long answers wrap naturally.
+- Extra bottom breathing room.
+
+No game logic, Assistant questions/answers, Telegram, Cody, Batman,
+Secret Shelf, or other LizzyOS features were changed.
+
+UPLOAD ONLY:
+1. style.css
+2. index.html (cache-bust only)

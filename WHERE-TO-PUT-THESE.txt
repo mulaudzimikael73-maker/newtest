@@ -1,0 +1,16 @@
+Micky's Daily News — daily rotation update
+Upload/replace these 5 files (flat in this zip, put them at these paths):
+
+  news-data.ts    ->  src/lib/news-data.ts
+  newspaper.tsx   ->  src/components/newspaper.tsx
+  index.tsx       ->  src/routes/index.tsx
+  bank.tsx        ->  src/routes/bank.tsx
+  president.tsx   ->  src/routes/president.tsx
+
+What changed:
+- Every headline, bulletin item, bank alert, ticker line and presidential
+  statement now appears only ONCE per edition (duplicates across sections and
+  the ticker are filtered out automatically).
+- The edition is re-shuffled at random every day, seeded by the date
+  (Africa/Johannesburg), so the page is identical on refresh but new tomorrow.
+- Masthead now prints the real date and an auto-incrementing edition number.

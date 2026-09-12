@@ -1,0 +1,26 @@
+V4.15 launcher hotfix
+
+Confirmed working from user:
+- Batman wallpaper
+- Cody Legal Documents photo
+- Overall desktop order/layout
+
+Remaining issue isolated to launch clicks.
+
+V4.15 adds a completely independent launcher AFTER living-desktop.js loads.
+It directly assigns onclick to:
+- Lizzy Assistant -> openAssistant
+- How's Today? -> openDay
+- Cody Court game card -> openCourt
+- Rock Paper Scissors game card -> openRps
+
+It also forces pointer-events on for those four controls.
+
+This intentionally bypasses the previous delegated-click mechanism instead of
+changing the working wallpaper, Cody rendering, games layout, Telegram code,
+or other LizzyOS systems.
+
+UPLOAD ONLY:
+- index.html
+
+All other V4.14 files stay exactly as they are.

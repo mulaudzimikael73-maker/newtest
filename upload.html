@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Lizzy Read Me Uploader</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            padding: 30px 15px;
+            font-family: Arial, sans-serif;
+            color: white;
+            background: linear-gradient(
+                135deg,
+                #28142f,
+                #4b204d,
+                #7d285f
+            );
+        }
+
+        .uploader {
+            width: min(760px, 100%);
+            margin: 0 auto;
+            padding: 35px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(16px);
+        }
+
+        h1,
+        h2 {
+            text-align: center;
+        }
+
+        h1 {
+            margin-top: 0;
+        }
+
+        .description {
+            line-height: 1.6;
+            text-align: center;
+            opacity: 0.9;
+        }
+
+        .section {
+            margin-top: 25px;
+            padding: 24px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .section strong {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        input[type="file"] {
+            display: block;
+            width: 100%;
+            margin-top: 15px;
+            color: white;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 20px;
+            padding: 17px;
+            border: none;
+            border-radius: 999px;
+            font-size: 17px;
+            font-weight: bold;
+            color: white;
+            background: linear-gradient(135deg, #ff5ca8, #ff86c4);
+            cursor: pointer;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+            transform: none;
+        }
+
+        #status {
+            margin-top: 25px;
+            line-height: 1.7;
+            text-align: center;
+        }
+
+        .progressOuter {
+            display: none;
+            height: 12px;
+            margin-top: 25px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.18);
+        }
+
+        #progressBar {
+            width: 0%;
+            height: 100%;
+            transition: width 0.3s;
+            background: white;
+        }
+
+        .results {
+            margin-top: 35px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 280px;
+            padding: 18px;
+            resize: vertical;
+            border: none;
+            border-radius: 16px;
+            font-family: Consolas, monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .secondaryButton {
+            background: rgba(255, 255, 255, 0.18);
+        }
+
+        .downloadButton {
+            background: linear-gradient(135deg, #ff4f9a, #ff79bd);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .warning {
+            margin-top: 30px;
+            padding: 18px;
+            border-radius: 16px;
+            line-height: 1.6;
+            background: rgba(255, 190, 80, 0.15);
+        }
+
+        .fileCount {
+            margin-top: 12px;
+            font-size: 14px;
+            opacity: 0.85;
+        }
+
+        @media (max-width: 600px) {
+            .uploader {
+                padding: 22px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <main class="uploader">
+
+        <h1>❤️ Lizzy Read Me Uploader</h1>
+
+        <p class="description">
+            Load your current Read Me JSON, choose new photos or videos,
+            upload them, and download the updated file.
+        </p>
+
+        <section class="section">
+
+            <strong>Step 1: Choose your current readme.json</strong>
+
+            <p>
+                Select the file from your website’s
+                <b>data</b> folder.
+            </p>
+
+            <input
+                id="existingJsonInput"
+                type="file"
+                accept=".json,application/json"
+            >
+
+            <div id="existingStatus" class="fileCount">
+                No existing JSON selected.
+            </div>
+
+        </section>
+
+        <section class="section">
+
+            <strong>Step 2: Choose new photos and videos</strong>
+
+            <input
+                id="mediaInput"
+                type="file"
+                accept="image/*,video/*"
+                multiple
+            >
+
+            <div id="mediaStatus" class="fileCount">
+                No media selected.
+            </div>
+
+        </section>
+
+        <button id="uploadButton">
+            Upload and Build Updated JSON
+        </button>
+
+        <div class="progressOuter" id="progressOuter">
+            <div id="progressBar"></div>
+        </div>
+
+        <div id="status"></div>
+
+        <section id="resultsSection" class="results hidden">
+
+            <h2>Updated readme.json</h2>
+
+            <textarea id="jsonOutput" readonly></textarea>
+
+            <button id="downloadButton" class="downloadButton">
+                Download Updated readme.json
+            </button>
+
+            <button id="copyButton" class="secondaryButton">
+                Copy JSON
+            </button>
+
+        </section>
+
+        <div class="warning">
+            Keep this uploader private. Anyone with access to the page and
+            your unsigned preset could upload files to your Cloudinary account.
+        </div>
+
+    </main>
+
+    <script>
+        const CLOUD_NAME = "bdfevohg";
+        const UPLOAD_PRESET = "readme_upload";
+
+        const existingJsonInput =
+            document.getElementById("existingJsonInput");
+
+        const mediaInput =
+            document.getElementById("mediaInput");
+
+        const existingStatus =
+            document.getElementById("existingStatus");
+
+        const mediaStatus =
+            document.getElementById("mediaStatus");
+
+        const uploadButton =
+            document.getElementById("uploadButton");
+
+        const statusBox =
+            document.getElementById("status");
+
+        const progressOuter =
+            document.getElementById("progressOuter");
+
+        const progressBar =
+            document.getElementById("progressBar");
+
+        const resultsSection =
+            document.getElementById("resultsSection");
+
+        const jsonOutput =
+            document.getElementById("jsonOutput");
+
+        const downloadButton =
+            document.getElementById("downloadButton");
+
+        const copyButton =
+            document.getElementById("copyButton");
+
+        let existingMemories = [];
+        let finalMemories = [];
+
+        existingJsonInput.addEventListener(
+            "change",
+            loadExistingJson
+        );
+
+        mediaInput.addEventListener(
+            "change",
+            showMediaCount
+        );
+
+        uploadButton.addEventListener(
+            "click",
+            uploadFiles
+        );
+
+        downloadButton.addEventListener(
+            "click",
+            downloadJson
+        );
+
+        copyButton.addEventListener(
+            "click",
+            copyJson
+        );
+
+        async function loadExistingJson() {
+            const file = existingJsonInput.files[0];
+
+            if (!file) {
+                existingMemories = [];
+                existingStatus.textContent =
+                    "No existing JSON selected.";
+                return;
+            }
+
+            try {
+                const text = await file.text();
+                const parsedData = JSON.parse(text);
+
+                if (!Array.isArray(parsedData)) {
+                    throw new Error(
+                        "The JSON must contain a list of memories."
+                    );
+                }
+
+                existingMemories = parsedData;
+
+                existingStatus.textContent =
+                    `✅ Loaded ${existingMemories.length} existing item(s).`;
+            } catch (error) {
+                existingMemories = [];
+
+                existingStatus.textContent =
+                    "❌ This JSON file could not be read.";
+
+                console.error(error);
+            }
+        }
+
+        function showMediaCount() {
+            const files = Array.from(mediaInput.files);
+
+            if (files.length === 0) {
+                mediaStatus.textContent =
+                    "No media selected.";
+                return;
+            }
+
+            mediaStatus.textContent =
+                `${files.length} new file(s) selected.`;
+        }
+
+        async function uploadFiles() {
+            const files = Array.from(mediaInput.files);
+
+            if (files.length === 0) {
+                statusBox.textContent =
+                    "Please choose at least one photo or video.";
+                return;
+            }
+
+            uploadButton.disabled = true;
+            resultsSection.classList.add("hidden");
+            progressOuter.style.display = "block";
+            progressBar.style.width = "0%";
+
+            const newMemories = [];
+            const failedFiles = [];
+
+            for (let index = 0; index < files.length; index++) {
+                const file = files[index];
+
+                statusBox.textContent =
+                    `Uploading ${index + 1} of ${files.length}: ${file.name}`;
+
+                try {
+                    const memory =
+                        await uploadOneFile(file);
+
+                    newMemories.push(memory);
+                } catch (error) {
+                    failedFiles.push(file.name);
+                    console.error(
+                        "Upload failed:",
+                        file.name,
+                        error
+                    );
+                }
+
+                const percentage =
+                    Math.round(
+                        ((index + 1) / files.length) * 100
+                    );
+
+                progressBar.style.width =
+                    percentage + "%";
+            }
+
+            finalMemories = [
+                ...existingMemories,
+                ...newMemories
+            ];
+
+            jsonOutput.value =
+                JSON.stringify(finalMemories, null, 2);
+
+            resultsSection.classList.remove("hidden");
+
+            if (failedFiles.length === 0) {
+                statusBox.textContent =
+                    `✅ Added ${newMemories.length} new file(s). ` +
+                    `The updated JSON contains ${finalMemories.length} item(s).`;
+            } else {
+                statusBox.innerHTML =
+                    `Uploaded ${newMemories.length} file(s).<br>` +
+                    `Failed: ${failedFiles.join(", ")}`;
+            }
+
+            uploadButton.disabled = false;
+        }
+
+        async function uploadOneFile(file) {
+            const formData = new FormData();
+
+            formData.append("file", file);
+            formData.append(
+                "upload_preset",
+                UPLOAD_PRESET
+            );
+
+            const uploadUrl =
+                `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`;
+
+            const response = await fetch(uploadUrl, {
+                method: "POST",
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                const message =
+                    result.error?.message ||
+                    "Cloudinary upload failed.";
+
+                throw new Error(message);
+            }
+
+            const isVideo =
+                result.resource_type === "video" ||
+                file.type.startsWith("video/");
+
+            return {
+                type: isVideo ? "video" : "image",
+                url: result.secure_url
+            };
+        }
+
+        function downloadJson() {
+            if (finalMemories.length === 0) {
+                statusBox.textContent =
+                    "There is no updated JSON to download.";
+                return;
+            }
+
+            const jsonText =
+                JSON.stringify(finalMemories, null, 2);
+
+            const blob = new Blob(
+                [jsonText],
+                { type: "application/json" }
+            );
+
+            const downloadUrl =
+                URL.createObjectURL(blob);
+
+            const link =
+                document.createElement("a");
+
+            link.href = downloadUrl;
+            link.download = "readme.json";
+
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            URL.revokeObjectURL(downloadUrl);
+
+            downloadButton.textContent =
+                "Downloaded ✅";
+
+            setTimeout(() => {
+                downloadButton.textContent =
+                    "Download Updated readme.json";
+            }, 1800);
+        }
+
+        async function copyJson() {
+            try {
+                await navigator.clipboard.writeText(
+                    jsonOutput.value
+                );
+
+                copyButton.textContent =
+                    "Copied ✅";
+            } catch (error) {
+                jsonOutput.select();
+                document.execCommand("copy");
+
+                copyButton.textContent =
+                    "Copied ✅";
+            }
+
+            setTimeout(() => {
+                copyButton.textContent =
+                    "Copy JSON";
+            }, 1800);
+        }
+    </script>
+
+</body>
+</html>

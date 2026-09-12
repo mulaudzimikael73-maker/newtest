@@ -1,0 +1,44 @@
+INTERACTIVE REWARDS — FULL FEATURE TEST REPORT
+
+BROWSER-TESTED SUCCESSFULLY:
+1. Interactive Rewards opens.
+2. VIP activates.
+3. VIP activation screen opens.
+4. Enter VIP Mode opens VIP Control Panel.
+5. Classified Sneak Peek opens the real locked-item selector.
+6. Selecting a file reveals title + teaser and decrements peeks 2 -> 1.
+7. VIP Daily Reward Reroll arms the real Daily Rewards reroll state.
+8. VIP Secret Shelf Discount creates the live 10% discount state.
+9. VIP Override accepts a ruling and consumes the privilege.
+10. Mystery Rare Box opens Money / Secrets / Mikael choices.
+11. Money deposits a tested random 20–50 Micky Bucs into the real wallet.
+12. Secrets can create a live 15% Secret Shelf discount.
+13. Mikael interaction inserts a real interaction token into Token Jar.
+14. No Interactive Rewards browser errors occurred during the full harness.
+
+CODE/INTEGRATION VALIDATED:
+- VIP and Mystery Rare Box future Daily Reward wins bypass normal Token Jar and route to Interactive Rewards.
+- VIP Mystery Box odds boost is live in Daily Rewards.
+- VIP Daily Reward reroll button is implemented in Daily Rewards.
+- Secret Shelf purchase code applies the active VIP/Rare Box discount to the actual accepted purchase.
+- VIP Assistant questions are added only while VIP is active.
+- VIP +1 MB Arcade bonus listener is active, capped at 5 MB per VIP session.
+- VIP +3 MB daily allowance is active.
+- Telegram Worker handlers exist for VIP activation, privileges, complaints, messages and Rare Box results.
+- All JavaScript files pass Node syntax validation.
+
+TEST INVENTORY IN THIS BUILD:
+- VIP Status — One Day ×1
+- Mystery Rare Box ×1
+
+DEPLOYMENT:
+GitHub:
+- index.html
+- script.js
+- style.css
+- interactive-rewards.js
+- fun-apps.js
+- seed-store.js
+
+Cloudflare:
+- redeploy cloudflare-worker.js for the new Telegram notification types.

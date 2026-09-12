@@ -1,0 +1,18 @@
+Built directly from your uploaded practice-main.zip.
+
+ROOT CAUSES FOUND AND FIXED
+1. Your real desktop icon container is #desktopArea. Previous patches were targeting selectors your site does not use.
+2. The old icon() helper returned immediately when an icon already existed, so it never attached its click handler.
+3. Rock Paper Scissors is implemented as openRps, and is now wired to the native rpsIcon.
+4. Mikael Takeover really uses body.mikaelTakeoverActive. The supplied Bat-Signal photo now reacts to that exact state.
+5. Cody Legal Documents really renders as .classifiedReader. The supplied Cody photo now themes that exact reader.
+
+TEST ORDER
+- Desktop: Cody Court, RPS, Lizzy Assistant and How's Today? should all be visible.
+- Lizzy Assistant: click a question.
+- Cody Court: select evidence and submit a ruling.
+- Cody Legal Documents: Cody photo should be behind the file.
+- Mikael Takeover: Bat-Signal photo should become the actual desktop wallpaper.
+
+Safest deployment: replace the entire repository contents with this ZIP.
+The Cloudflare worker inside this package is the same worker from your uploaded current build.

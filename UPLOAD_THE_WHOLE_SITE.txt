@@ -1,0 +1,26 @@
+FINAL CLEAN REBUILD
+
+This was rebuilt from the exact ORIGINAL V4.17 BIGGER ASSISTANT ANSWER ZIP.
+
+Only code changes from that original:
+1. index.html — one sick-letter button.
+2. script.js — one sick-letter object using the existing `body` renderer.
+3. letter-notifications.js — one notification-map entry.
+
+fun-apps.js and ALL other feature files are the exact originals.
+
+IMPORTANT THIS TIME:
+Upload/replace the ENTIRE contents of this ZIP to the ROOT of the GitHub repository.
+Do not upload only four files. Previous partial uploads may have left incompatible
+versions of other files deployed.
+
+Preserve folders exactly:
+assets/
+content/
+data/
+settings/
+admin/
+
+After GitHub Pages deploys, hard refresh Ctrl+Shift+R.
+
+No Cloudflare Worker replacement is required by this sick-letter change.

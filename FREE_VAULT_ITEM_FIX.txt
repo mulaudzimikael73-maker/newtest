@@ -1,0 +1,22 @@
+FREE VAULT ITEM — WORKING
+
+The existing Free Vault Item reward is stored as:
+lizzyRewardPerksV1.vaultFree
+
+The Secret Shelf/Vault now reads that credit.
+
+When Lizzy has a credit:
+- Vault header shows FREE VAULT ITEM xN.
+- Every unowned Vault item gets CLAIM FREE — 0 MB.
+- Lizzy chooses the exact item.
+- Confirmation appears before consumption.
+- On confirmation the item is granted through the normal Vault grant pipeline.
+- Dossiers go to CLASSIFIED.
+- Purchased letters go to Purchased Letters.
+- Mikael token items go to the appropriate token inventory.
+- Documents go to CLASSIFIED.
+- Micky Bucs are not deducted.
+- One free credit is consumed only after the grant succeeds.
+- Remaining free-credit count updates immediately.
+
+All JavaScript passed syntax validation.

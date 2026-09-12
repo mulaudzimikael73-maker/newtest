@@ -1,0 +1,24 @@
+VIP REINSTATE + REDEEM FIX
+
+On first load of this version:
+- Removes old redeemed-history entries for:
+  * VIP Status — One Day
+  * Mystery Rare Box
+- Restores both into Token Jar as ×1
+
+VIP redemption flow:
+1. Click Redeem.
+2. Token is consumed once.
+3. Normal redeem window closes.
+4. Fresh 24-hour VIP state is created.
+5. VIP welcome screen appears.
+6. VIP badge/countdown appears.
+7. VIP render is forced.
+8. Telegram notification runs in background and cannot block UI.
+
+Mystery Rare Box is restored to Token Jar ×1 but not otherwise changed here,
+because the user wants to verify VIP first.
+
+UPLOAD:
+- script.js
+- index.html

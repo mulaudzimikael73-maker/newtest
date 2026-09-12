@@ -1,0 +1,14 @@
+The VIP activation was not frozen: the activation card exceeded the viewport, placing ENTER VIP MODE below the visible screen while the overlay could not scroll.
+
+Fixed:
+- Activation overlay is vertically scrollable.
+- Layout scales to short screens/laptops.
+- ENTER VIP MODE button is guaranteed visible/reachable.
+- Activation opens at the top.
+- Escape key can close the activation celebration as a safety fallback.
+- VIP remains active after closing the celebration; the countdown badge remains available.
+
+Upload:
+index.html
+script.js
+style.css

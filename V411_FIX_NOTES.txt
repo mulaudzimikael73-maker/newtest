@@ -1,0 +1,22 @@
+V4.11 fixes the two remaining issues reported after V4.10.
+
+WHY THE ICONS WERE VISIBLE BUT DEAD
+The icons are static in index.html, but living-desktop.js can run before those DOM
+elements exist. The previous icon helper therefore had nothing to bind to.
+V4.11 explicitly re-binds all four apps after DOMContentLoaded and again on load.
+
+WHY CODY'S PHOTO DID NOT APPEAR
+The previous theme depended on a wrapper class being added by a broad detector.
+V4.11 watches the actual .classifiedReader and applies the photo directly when its
+visible text identifies Cody Legal Documents / Cody Aladeen legal counsel.
+
+TEST:
+1. Cody Court icon opens.
+2. RPS opens.
+3. Lizzy Assistant opens.
+4. How's Today? opens.
+5. Open Cody Legal Documents; Cody photo should be visible behind the document.
+6. Batman Takeover remains unchanged and working.
+
+Upload entire extracted ZIP contents, or replace index.html, living-desktop.js,
+style.css. Keep cody-legal-background.jpeg and mikael-takeover-batsignal.jpeg.

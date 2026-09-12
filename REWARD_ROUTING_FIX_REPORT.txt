@@ -1,0 +1,33 @@
+REWARD ROUTING FIX
+
+REMOVED FROM DAILY REWARDS:
+- Special Mikael Letter
+- Unreleased Mini Letter
+- Unreleased Letter
+- Unreleased Full Letter
+- Legendary Secret Letter
+- Secret Shelf Unlock
+
+FIXED:
+- Second Chance Token now creates a real reroll credit.
+- Claimed Daily Rewards show a USE SECOND CHANCE REROLL button when credits exist.
+- Using it consumes one credit and replaces today's reward.
+
+VALUABLE REWARD ROUTING:
+- Micky Bucs -> Bank of Micky
+- Garden items -> Garden
+- VIP / Mystery Rare Box -> Interactive Rewards
+- Physical/date/interaction rewards -> Token Jar
+- Classified clues/fragments/previews/unlocks -> persistent Classified Peek credits
+- Crack-the-Code hints -> persistent hint credits
+- Vault discounts -> persistent discount state
+- Free Vault Item -> persistent free-item credit
+- Double/Triple next reward -> persistent perk credits
+- Micky Bucs x3 next win -> persistent perk credit
+- Choose Your Own Reward -> persistent choice credit
+- Hidden Memory Unlock -> persistent memory credit
+- Playlist Addition -> persistent playlist credit
+- Badges -> persistent badge inventory
+- Surprise rewards -> persistent surprise inventory
+
+All JavaScript files pass syntax validation.

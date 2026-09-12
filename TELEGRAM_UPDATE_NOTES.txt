@@ -1,0 +1,16 @@
+LizzyOS Telegram Update
+
+Connected to Cloudflare Worker:
+https://lizzyos-notifications.mulaudzimikael73.workers.dev/
+
+Telegram notifications added for:
+- Mikhail Quiz: score, result, each question/answer/correct answer, claimed reward
+- Mikhail Quiz reward redemption
+- Would Mikael Rather: score + all questions/choices/results
+- Crack the Code: mission + all answers/expected answers/results
+- Calendar date/time selections
+- Every Daily Mystery reward claim (CLAIMED)
+- Every Daily Mystery reward redemption (REDEEMED)
+- Legendary reward claims and redemptions get distinct alerts
+
+Note: This V3 source does not contain a Lizzy Mail feature, so there was no Lizzy Mail submission handler to connect in this build.

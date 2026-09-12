@@ -1,0 +1,11 @@
+TEST REPOSITORY: YourUltimateFan
+Preserved: Garden, seeds, streak, Micky Bucs, existing daily jobs/completions, Token Jar.
+Fixes: Plant a Seed is auto-verified. Game Night requires three different completed games.
+Secret Shelf: exactly 5 negotiable items.
+- Classified File #002: Hater Investigation
+- Unreleased Letter #001
+- UNO Reverse Token -> saved under Mikael's Tokens
+- Mikael Wildcard
+- The Vault -> contains Classified File #003 Operation: Mr Perfect
+Purchased letters are saved into Open When > Purchased Letters.
+Use cloudflare-worker-approval.js for Telegram Approve/Reject and negotiation backend.

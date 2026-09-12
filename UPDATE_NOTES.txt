@@ -1,0 +1,20 @@
+LIZZYOS — GARDEN + TOKEN JAR + WEATHER UPDATE
+
+PROTECTED EXISTING DAILY REWARD DATA
+- lizzyMysteryStreak
+- lizzyMysteryLastDate
+- lizzyMysteryOpened
+- lizzyMysteryReward
+
+This update never deletes or renames those keys.
+
+NEW STORAGE
+- lizzyGardenV1
+- lizzyTokenJarV1
+- lizzyGardenTokenMigrationV1
+- lizzyGameSeedRewardsV1
+- lizzyPendingTokenNotificationsV1
+- lizzyTelegramWorkerURL (future Cloudflare Worker URL)
+
+Token redemption notifications are queued locally until the Telegram
+Cloudflare Worker URL is connected.

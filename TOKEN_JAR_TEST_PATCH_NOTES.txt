@@ -1,0 +1,22 @@
+TOKEN JAR FIX
+
+This patch is based directly on the uploaded practice-main (1).zip.
+
+On first load after this update, Token Jar is guaranteed to contain at least:
+- 👑 VIP Status — One Day ×1 (restores the VIP reward Lizzy already earned)
+- 🎁 Mystery Rare Box ×1 (test box requested by Mikael)
+
+VIP:
+- Claiming/winning VIP now stores it in the normal Token Jar.
+- The 24-hour VIP timer does NOT begin until the Token Jar token is redeemed.
+- Redeeming consumes one VIP token and activates VIP Mode.
+
+MYSTERY RARE BOX:
+- Claiming/winning it stores it in the normal Token Jar.
+- Redeeming the Token Jar item opens Money / Secrets / Mikael.
+- Money remains random 20–50 MB.
+- Mikael retains both approved letters and the four approved interactions.
+- Interaction wins now enter the normal Token Jar as redeemable tokens.
+
+This test/restoration grant runs only once per browser because it uses:
+lizzyVipRareBoxTokenJarMigrationV1

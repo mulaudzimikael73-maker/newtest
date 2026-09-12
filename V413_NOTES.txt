@@ -1,0 +1,9 @@
+V4.13
+- Repaired malformed rareMikael HTML that was visibly printing code on the desktop.
+- Removed orphan Cody Court / Rock Paper Scissors desktop text.
+- Court and RPS now exist only inside Games.
+- Assistant and How's Today use direct inline launch calls.
+- Games Court/RPS cards use direct inline launch calls.
+- LizzyFunApps API is exposed immediately after Assistant is defined.
+- Cody photo is now applied directly as the classified reader background with a lighter overlay.
+- Batman wallpaper unchanged.

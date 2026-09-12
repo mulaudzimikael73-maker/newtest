@@ -1,0 +1,4 @@
+Built directly from uploaded v3.zip.
+Preserved current storyline, Read Me media, audio timings, Recycle Bin, Our Date calendar, Lizzy Quiz and Heart Catch.
+Added/fixed Mikhail Quiz (18 supplied questions, 3 levels, reward ticket) and Daily Mystery Box.
+Moved Mikhail Quiz, Daily Mystery and Our Date icons into the actual desktop grid to prevent overlap.

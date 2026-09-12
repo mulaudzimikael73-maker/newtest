@@ -1,0 +1,41 @@
+LIZZYOS V4.14 — RELEASE BUILD
+
+This is the release candidate intended for the real website.
+
+Architecture:
+- Lizzy Assistant + How's Today? on desktop.
+- Cody Court + Rock Paper Scissors inside Games only.
+- One delegated click handler, avoiding load-order / DOM-rebuild failures.
+- Cody photo attached at the exact Cody-file render point.
+- Working Batman Takeover implementation preserved.
+- Telegram Assistant and game-result Worker handlers preserved.
+- rareMikael malformed markup repaired.
+
+TRIPLE-CHECK RESULTS:
+PASS — JS syntax mikael-exe.js
+PASS — JS syntax cloudflare-worker.js
+PASS — JS syntax internet.js
+PASS — JS syntax letter-notifications.js
+PASS — JS syntax living-desktop.js
+PASS — JS syntax cloudflare-worker-approval.js
+PASS — JS syntax script.js
+PASS — JS syntax seed-store.js
+PASS — Assistant exactly once
+PASS — Day exactly once
+PASS — Court in Games exactly once
+PASS — RPS in Games exactly once
+PASS — No Court desktop icon
+PASS — No RPS desktop icon
+PASS — rareMikael valid
+PASS — Function openCourt
+PASS — Function openRps
+PASS — Function openAssistant
+PASS — Function openDay
+PASS — API exposed
+PASS — Delegated launcher
+PASS — Cody render marker
+PASS — Cody asset
+PASS — Batman asset
+PASS — Batman CSS
+PASS — Telegram game handler
+PASS — Telegram assistant handler

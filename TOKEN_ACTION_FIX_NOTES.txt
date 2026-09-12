@@ -1,0 +1,14 @@
+FIXED:
+The screenshot shows both special tokens were consumed and logged as Telegram sent, but their actions did not launch.
+
+Root flow fixed:
+- VIP and Mystery Rare Box UI now launch BEFORE Telegram/network work.
+- Telegram can no longer block the special reward action.
+- VIP redemption force-starts a fresh 24-hour VIP state.
+- Mystery Rare Box redemption opens Money / Secrets / Mikael immediately.
+- Existing normal token behavior remains.
+- Recovery: the already-redeemed VIP / Mystery Rare Box history entries can be clicked to launch their missing action in this test build.
+
+UPLOAD:
+script.js
+index.html
