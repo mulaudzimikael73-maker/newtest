@@ -3699,6 +3699,13 @@ body.mikaelProfileActive #livingDesktopIcon:after{content:"MIKAEL";position:abso
 .mikaelPrivateToken{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px;margin:9px 0;border-radius:14px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.12)}
 .mikaelPrivateEmoji{font-size:28px}.mikaelPrivateToken p{margin:3px 0;font-size:11px;opacity:.75}.mikaelPrivateToken small{font-size:9px;opacity:.6}
 #mikaelTokensBox .mikaelReverseCard button{display:none!important}
+/* Scrollable token list — header/lock button stay put, only the tokens scroll */
+#mikaelPrivateTokenList{max-height:calc(88vh - 260px);overflow-y:auto;padding-right:8px;margin-right:-8px}
+#mikaelPrivateTokenList::-webkit-scrollbar{width:6px}
+#mikaelPrivateTokenList::-webkit-scrollbar-track{background:transparent}
+#mikaelPrivateTokenList::-webkit-scrollbar-thumb{background:rgba(255,255,255,.28);border-radius:10px}
+#mikaelPrivateTokenList::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.42)}
+@media (max-width:640px){#mikaelPrivateTokenList{max-height:calc(88vh - 230px)}}
 
 /* CROSS-DEVICE REVERSE TOKEN REDEMPTION NOTICE */
 .reverseRedemptionOverlay{position:fixed;inset:0;z-index:200000;background:rgba(10,5,20,.72);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px)}
