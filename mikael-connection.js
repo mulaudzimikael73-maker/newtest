@@ -49,12 +49,23 @@ function readLizzyMood(){
   return v&&v.day===today?v:null;
  }catch{return null}
 }
-function isMutual(lizzyLabel,mikaelText){
- if(!lizzyLabel||!mikaelText)return false;
- const norm=s=>s.toLowerCase();
- const keywords=["miss","love","thinking of you","soft","happy"];
- const l=norm(lizzyLabel),m=norm(mikaelText);
- return keywords.some(k=>l.includes(k)&&m.includes(k));
+/* Each of Lizzy's mood IDs maps to the word(s) that count as a match in
+   whatever Mikael types for his own mood. Most moods just match themselves
+   ("tired" matches "tired"), but a couple of pairs are intentionally linked:
+   - "missing" and "missing-standard" are both just "missing Mikael" in
+     spirit, so either one matches if Mikael's text mentions missing her.
+   - "catwoman" is Batman's counterpart, so it matches if Mikael says he's
+     feeling like Batman (or Catwoman, just in case). */
+const MOOD_MATCH_KEYWORDS={
+ "missing":["missing"],
+ "missing-standard":["missing"],
+ "catwoman":["batman","catwoman"]
+};
+function isMutual(lizzyId,mikaelText){
+ if(!lizzyId||!mikaelText)return false;
+ const m=mikaelText.toLowerCase();
+ const keywords=MOOD_MATCH_KEYWORDS[lizzyId]||[lizzyId.toLowerCase()];
+ return keywords.some(k=>m.includes(k));
 }
 async function renderConnection(){
  const panel=document.getElementById("connectionPanel");
@@ -63,7 +74,7 @@ async function renderConnection(){
  const mikael=await mikaelMood().catch(()=>null);
  const lizzyText=lizzy?lizzy.label:"Not selected yet today";
  const mikaelText=mikael?mikael.text:"Hasn't shared a mood yet";
- const mutual=isMutual(lizzy?.label,mikael?.text);
+ const mutual=isMutual(lizzy?.id,mikael?.text);
  panel.innerHTML=`
   <div class="connectionRow"><span>YOU</span><strong>${lizzyText.replace(/</g,"&lt;")}</strong></div>
   <div class="connectionRow"><span>MIKAEL</span><strong>${mikaelText.replace(/</g,"&lt;")}</strong></div>
