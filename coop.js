@@ -15,4 +15,53 @@ async function loadChess(){try{const d=await api("coop_chess"),s=d.state;if(s.fe
 async function help(text){try{await api("lizzy_chess_help",{text});$("hintBox").textContent="💌 Mikael has been notified. His reply will appear here.";loadMessages()}catch(e){$("hintBox").textContent=e.message}}
 $("pieceHelpBtn").onclick=()=>$("pieceModal").classList.remove("hidden");$("closePieceModal").onclick=()=>$("pieceModal").classList.add("hidden");document.querySelectorAll("[data-piece]").forEach(b=>b.onclick=()=>{ $("pieceModal").classList.add("hidden");help(`How does the ${b.dataset.piece} move in chess? Please explain it simply to Lizzy and include a quick example.`)});$("hintHelpBtn").onclick=()=>help("Give me a hint for my current position. Please tell me what I should look at without simply making the move for me.");$("rescueHelpBtn").onclick=()=>help("I have no idea what to do 😭 Please look at my current position and give me a beginner-friendly suggestion.");$("askHelp").onclick=()=>{const t=$("customHelp").value.trim();if(t){$("customHelp").value="";help(t)}};
 loadMessages();loadChess();setInterval(loadMessages,5000);setInterval(()=>{if($("chess").classList.contains("active"))loadChess()},5000);
+
+// Trophy shelf — always visible, not just on the escape tab
+async function loadTrophies(){try{const d=await api("coop_trophies"),xs=d.trophies||[];const el=$("trophyShelfItems");if(!xs.length){el.innerHTML='<span class="empty">No trophies yet — go win one 👀</span>';return}el.innerHTML=xs.map(t=>`<div class="trophy" title="${esc(t.description||"")}"><span class="trophy-emoji">${esc(t.emoji||"🏆")}</span><span class="trophy-name">${esc(t.name)}</span><span class="trophy-date">${new Date(t.wonAt).toLocaleDateString([], {month:"short",day:"numeric"})}</span></div>`).join("")}catch{}}
+
+// Escape Room
+let escapeTimerHandle=null,escapeState=null;
+function fmtTime(sec){sec=Math.max(0,Math.floor(sec));const m=String(Math.floor(sec/60)).padStart(2,"0"),s=String(sec%60).padStart(2,"0");return `${m}:${s}`}
+function renderEscape(){
+  if(!escapeState)return;
+  const started=!!escapeState.startedAt;
+  $("escapeIntroPanel").classList.toggle("hidden",started);
+  $("lockerPanel").classList.toggle("hidden",!started||escapeState.stage!=="locker_room");
+  $("gymPanel").classList.toggle("hidden",!started||escapeState.stage!=="gym");
+  $("escapeDonePanel").classList.toggle("hidden",escapeState.stage!=="complete");
+  if(escapeState.stage==="complete")$("escapeDoneText").textContent=`Cleared in ${fmtTime(escapeState.elapsedSeconds)}. Check the Trophy Shelf up top — it's yours now 🏆`;
+  $("escapeTimer").textContent=fmtTime(escapeState.elapsedSeconds);
+  if(escapeTimerHandle)clearInterval(escapeTimerHandle);
+  if(started&&escapeState.stage!=="complete"){
+    let sec=escapeState.elapsedSeconds;
+    escapeTimerHandle=setInterval(()=>{sec++;$("escapeTimer").textContent=fmtTime(sec)},1000);
+  }
+}
+async function loadEscape(){try{const d=await api("escape_status");escapeState=d.state;renderEscape()}catch(e){$("escapeTimer").textContent="--:--"}}
+$("escapeStartBtn").onclick=async()=>{try{const d=await api("escape_start");escapeState=d.state;renderEscape()}catch(e){alert(e.message)}};
+async function trySubmit(stage,inputId,resultId){
+  const code=$(inputId).value.trim();
+  if(!code){$(resultId).textContent="Enter the code you found first.";return}
+  const btn=stage==="locker_room"?$("lockerSubmit"):$("gymSubmit");
+  btn.disabled=true;$(resultId).textContent="Checking…";
+  try{
+    const d=await api("escape_submit",{stage,code});
+    escapeState=d.state;
+    if(d.correct){
+      $(resultId).textContent="✅ That's it!";
+      try{window.confetti&&confetti({particleCount:120,spread:80,origin:{y:.6}})}catch{}
+      if(escapeState.trophyAwarded)loadTrophies();
+      renderEscape();
+    }else{
+      $(resultId).textContent=d.error||"❌ Not quite — look again.";
+      $(inputId).value="";
+    }
+  }catch(e){$(resultId).textContent=e.message}finally{btn.disabled=false}
+}
+$("lockerSubmit").onclick=()=>trySubmit("locker_room","lockerCode","lockerResult");
+$("gymSubmit").onclick=()=>trySubmit("gym","gymCode","gymResult");
+$("lockerCode").onkeydown=e=>{if(e.key==="Enter")$("lockerSubmit").click()};
+$("gymCode").onkeydown=e=>{if(e.key==="Enter")$("gymSubmit").click()};
+
+loadTrophies();loadEscape();setInterval(()=>{if($("escape").classList.contains("active"))loadEscape()},4000);
 })();

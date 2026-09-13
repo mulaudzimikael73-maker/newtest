@@ -326,6 +326,18 @@ const HQ_MESSAGE_INDEX="hq:messages:index:v1";
 const HQ_ACTIVITY_INDEX="hq:activity:index:v1";
 const HQ_CHESS_KEY="hq:chess:v1";
 const HQ_CHESS_HELP_INDEX="hq:chess:help:index:v1";
+/* ---- Escape Room (Locker Room -> Gym) ----
+   Codes live ONLY here on the server. No GET or HQ action ever returns
+   them — escape_submit only ever answers true/false. */
+const HQ_ESCAPE_KEY="hq:escape:v1";
+const HQ_TROPHY_INDEX="hq:trophies:index:v1";
+const ESCAPE_STAGES=["locker_room","gym"];
+const ESCAPE_CODES={locker_room:"4895",gym:"8431"};
+const defaultEscape=()=>({stage:"locker_room",startedAt:null,lockerSolvedAt:null,gymSolvedAt:null,completedAt:null,trophyAwarded:false,attempts:{locker_room:0,gym:0}});
+function publicEscape(s){
+  const elapsedSeconds=s.startedAt?Math.max(0,Math.round(((s.completedAt?new Date(s.completedAt):new Date())-new Date(s.startedAt))/1000)):0;
+  return{stage:s.stage,startedAt:s.startedAt,lockerSolvedAt:s.lockerSolvedAt,gymSolvedAt:s.gymSolvedAt,completedAt:s.completedAt,trophyAwarded:!!s.trophyAwarded,attempts:s.attempts||{locker_room:0,gym:0},elapsedSeconds};
+}
 const arrKV=async(env,key)=>{const x=await env.LIZZY_CLAIMS.get(key,{type:"json"});return Array.isArray(x)?x:[]};
 const saveArr=async(env,key,x)=>env.LIZZY_CLAIMS.put(key,JSON.stringify(x.slice(-300)));
 const hqAuth=(req,env,body=null)=>{
@@ -350,6 +362,8 @@ export default{async fetch(req,env){
 
  if(req.method==="GET"){
    if(u.searchParams.get("action")==="coop_chess"){const state=await env.LIZZY_CLAIMS.get(HQ_CHESS_KEY,{type:"json"})||defaultChess();return json({success:true,state});}
+   if(u.searchParams.get("action")==="escape_status"){const s=await env.LIZZY_CLAIMS.get(HQ_ESCAPE_KEY,{type:"json"})||defaultEscape();return json({success:true,state:publicEscape(s)});}
+   if(u.searchParams.get("action")==="coop_trophies"){const xs=await arrKV(env,HQ_TROPHY_INDEX);return json({success:true,trophies:xs.slice().reverse()});}
    if(u.searchParams.get("action")==="lizzy_messages"){const messages=await hqMessages(env);return json({success:true,messages:messages.filter(x=>x.status!=="handled").slice(-50)});}
    if(u.searchParams.get("mikaelTokens")==="1"){
      const state=await getMikaelTokenState(env);
@@ -627,6 +641,64 @@ if(b.action==="send_chess_hint"){
   const m={id:hqId("message"),kind:"message",text:`🎓 Mikael's chess tip: ${text}`,status:"pending",createdAt:new Date().toISOString()};
   const xs=await hqMessages(env);xs.push(m);await saveArr(env,HQ_MESSAGE_INDEX,xs);
   await hqActivity(env,"🎓 Chess Hint","Mikael sent Lizzy a chess tip.");
+  return json({success:true});
+}
+
+/* ---- Escape Room actions ----
+   Lizzy side (no key): escape_start, escape_submit
+   Mikael HQ side (needs MIKAEL_HQ_KEY): escape_reset
+   Status/trophies are public reads above since neither exposes a code. */
+if(b.action==="escape_status"){
+  const s=await env.LIZZY_CLAIMS.get(HQ_ESCAPE_KEY,{type:"json"})||defaultEscape();
+  return json({success:true,state:publicEscape(s)});
+}
+if(b.action==="coop_trophies"){
+  const xs=await arrKV(env,HQ_TROPHY_INDEX);
+  return json({success:true,trophies:xs.slice().reverse()});
+}
+if(b.action==="escape_start"){
+  let s=await env.LIZZY_CLAIMS.get(HQ_ESCAPE_KEY,{type:"json"})||defaultEscape();
+  if(!s.startedAt){
+    s.startedAt=new Date().toISOString();
+    await env.LIZZY_CLAIMS.put(HQ_ESCAPE_KEY,JSON.stringify(s));
+    await hqActivity(env,"🔐 Escape Room Started","Lizzy started the escape room.");
+    await tg(env,"sendMessage",{chat_id:env.TELEGRAM_CHAT_ID,text:"🔐 Lizzy just started the escape room. Clock's running."}).catch(()=>{});
+  }
+  return json({success:true,state:publicEscape(s)});
+}
+if(b.action==="escape_submit"){
+  const stage=S(b.stage,40),code=S(b.code,20).replace(/\D/g,"");
+  if(!ESCAPE_STAGES.includes(stage))return json({success:false,error:"Unknown stage"},400);
+  let s=await env.LIZZY_CLAIMS.get(HQ_ESCAPE_KEY,{type:"json"})||defaultEscape();
+  if(!s.startedAt)s.startedAt=new Date().toISOString();
+  s.attempts=s.attempts||{locker_room:0,gym:0};
+  if(s.stage!==stage){await env.LIZZY_CLAIMS.put(HQ_ESCAPE_KEY,JSON.stringify(s));return json({success:true,correct:false,state:publicEscape(s),error:"That lock isn't active yet."});}
+  s.attempts[stage]=(s.attempts[stage]||0)+1;
+  const correct=!!code&&code===ESCAPE_CODES[stage];
+  if(!correct){await env.LIZZY_CLAIMS.put(HQ_ESCAPE_KEY,JSON.stringify(s));return json({success:true,correct:false,state:publicEscape(s)});}
+  const now=new Date().toISOString();
+  if(stage==="locker_room"){
+    s.lockerSolvedAt=now;s.stage="gym";
+    await hqActivity(env,"🔓 Lock Solved","Lizzy solved the locker room lock.");
+    await tg(env,"sendMessage",{chat_id:env.TELEGRAM_CHAT_ID,text:"🔓 Lizzy escaped the locker room. On to the gym…"}).catch(()=>{});
+  }else if(stage==="gym"){
+    s.gymSolvedAt=now;s.completedAt=now;s.stage="complete";
+    await hqActivity(env,"🔓 Lock Solved","Lizzy solved the gym lock and finished the escape room.");
+    if(!s.trophyAwarded){
+      s.trophyAwarded=true;
+      const trophy={id:hqId("trophy"),name:"Senior Prank Survivor",emoji:"🏆",description:"Escaped the locker room and the gym after the seniors' lights-out prank.",wonAt:now};
+      const xs=await arrKV(env,HQ_TROPHY_INDEX);xs.push(trophy);await saveArr(env,HQ_TROPHY_INDEX,xs);
+      await hqActivity(env,"🏆 Trophy Won","Lizzy earned the Senior Prank Survivor trophy.",{trophyId:trophy.id});
+      await tg(env,"sendMessage",{chat_id:env.TELEGRAM_CHAT_ID,text:"🏆 Lizzy escaped the gym! Trophy earned: Senior Prank Survivor 🖤"}).catch(()=>{});
+    }
+  }
+  await env.LIZZY_CLAIMS.put(HQ_ESCAPE_KEY,JSON.stringify(s));
+  return json({success:true,correct:true,state:publicEscape(s)});
+}
+if(b.action==="escape_reset"){
+  if(!hqOnly(req,env,b))return json({success:false,error:"Unauthorized"},401);
+  await env.LIZZY_CLAIMS.put(HQ_ESCAPE_KEY,JSON.stringify(defaultEscape()));
+  await hqActivity(env,"🔄 Escape Reset","Escape room progress was reset (codes unchanged).");
   return json({success:true});
 }
 
