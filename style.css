@@ -977,6 +977,8 @@ body{
 }
 .systemAlertPopup.error{border:1px solid rgba(255,90,90,.55)}
 .systemAlertPopup.warning{border:1px solid rgba(255,190,80,.55)}
+.systemAlertPopup.notice{border:1px solid rgba(190,150,255,.55)}
+.systemAlertPopup.takeover{border:1px solid rgba(120,190,255,.6);background:rgba(12,18,36,.9)}
 .systemAlertPopup.folderComment{border:1px solid rgba(255,214,232,.5)}
 .systemAlertPopup.folderComment strong{color:#ffd6e8;letter-spacing:.5px}
 .systemAlertPopup.show{transform:translateX(0)}
@@ -984,6 +986,8 @@ body{
 .systemAlertBody strong{display:block;font-size:11px;letter-spacing:1px;margin-bottom:4px;opacity:.85}
 .systemAlertPopup.error strong{color:#ff8080}
 .systemAlertPopup.warning strong{color:#ffc766}
+.systemAlertPopup.notice strong{color:#c9a8ff}
+.systemAlertPopup.takeover strong{color:#7cc4ff}
 .systemAlertBody p{margin:0;font-size:13px;line-height:1.4}
 .folderIcon{
 
