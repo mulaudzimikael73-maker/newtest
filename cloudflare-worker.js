@@ -41,66 +41,6 @@ async function putRedemptionIndex(env,x){
 }
 function rid(){return `reverse_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;}
 
-/* ===== 🔐 CO-OP ESCAPE ROOM — "Locked In at East High" =====
-   Two locks, solved together in real time. The correct codes live ONLY
-   here on the server — they are never returned by any GET/POST response,
-   so neither device can read them out of network traffic or source code
-   shipped to the browser. Progress + timer state IS shared, since both
-   of you are meant to see live status. */
-const ESCAPE_STATE_KEY="escape:room:v1";
-const ESCAPE_HINT_INDEX_KEY="escape:hints:index:v1";
-const ESCAPE_TROPHY_KEY="escape:trophy:v1";
-// Secret — do not print/log/return these anywhere. Change them any time
-// by editing this line and redeploying; nothing else needs to change.
-const LOCK1_CODE="5481";
-const LOCK2_CODE="1235";
-const eid=()=>`escape_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
-function defaultEscapeState(){
-  return {status:"not_started",startedAt:null,lock1CompletedAt:null,completedAt:null,attempts:{lock1:0,lock2:0}};
-}
-async function getEscapeState(env){
-  const s=await env.LIZZY_CLAIMS.get(ESCAPE_STATE_KEY,{type:"json"});
-  return s&&typeof s==="object"?{...defaultEscapeState(),...s}:defaultEscapeState();
-}
-async function putEscapeState(env,s){
-  await env.LIZZY_CLAIMS.put(ESCAPE_STATE_KEY,JSON.stringify(s));
-}
-async function getEscapeHints(env){
-  const ids=await env.LIZZY_CLAIMS.get(ESCAPE_HINT_INDEX_KEY,{type:"json"});
-  const list=Array.isArray(ids)?ids:[],items=[];
-  for(const id of list){
-    const h=await env.LIZZY_CLAIMS.get(`escape:hint:${id}`,{type:"json"});
-    if(h)items.push(h);
-  }
-  return items;
-}
-async function getTrophy(env){
-  return env.LIZZY_CLAIMS.get(ESCAPE_TROPHY_KEY,{type:"json"});
-}
-
-/* ===== 😈 MIKAEL HQ REMOTE ANNOYANCE =====
-   One pending effect at a time (a queue would just mean Lizzy gets
-   buried instantly — not the goal). Lizzy's "STOP ANNOYING ME" button
-   clears whatever's pending AND starts a real cooldown that HQ can see
-   and honours, so it isn't a fake button. */
-const ANNOY_PENDING_KEY="annoy:pending:v1";
-const ANNOY_COOLDOWN_KEY="annoy:cooldown:v1";
-const ANNOY_COOLDOWN_MINUTES=20;
-const ANNOY_EFFECTS=[
-  "button_move","infinite_loading","keyboard_chaos","mikael_appears",
-  "attitude_meter","upside_down","screen_wobble","unskippable_ad",
-  "did_you_know","petty_tax","airhorn","captcha_joke","eyes_follow",
-  "balloon_pop","fake_update"
-];
-async function getAnnoyPending(env){
-  return env.LIZZY_CLAIMS.get(ANNOY_PENDING_KEY,{type:"json"});
-}
-async function getAnnoyCooldown(env){
-  const c=await env.LIZZY_CLAIMS.get(ANNOY_COOLDOWN_KEY,{type:"json"});
-  if(c&&c.until&&new Date(c.until).getTime()>Date.now())return c;
-  return null;
-}
-
 /* Shared grant logic — used by the mikael_reverse_token_award POST handler
    AND by the /token Telegram command. Keeps inventory + history in sync
    no matter which path awarded the token. */
@@ -278,6 +218,24 @@ async function createMessage(env,text,source){
 /* ===== 💗 SYNCED FEELINGS — MIKAEL'S MOOD =====
    A single current value, not a queue — always just "what Mikael feels right now". */
 const MIKAEL_MOOD_KEY="mikael_mood:current:v1";
+/* Quick-pick moods for the /mood button menu + Mikael HQ buttons.
+   Text is written so it lines up with MOOD_MATCH_KEYWORDS on the
+   front end (e.g. "batman" text matches Lizzy's "catwoman" mood). */
+const MIKAEL_MOOD_OPTIONS=[
+  ["happy","😊 Happy","Feeling happy today 😊"],
+  ["tired","🥱 Tired","Feeling tired 🥱"],
+  ["dramatic","🎭 Dramatic","Feeling dramatic 🎭"],
+  ["soft","🥹 Soft","Feeling soft today 🥹"],
+  ["annoyed","🙄 Annoyed","Feeling a bit annoyed 🙄"],
+  ["missing","🥺 Missing Lizzy","Missing Lizzy 🥺"],
+  ["sad","😢 Sad","Feeling sad 😢"],
+  ["indifferent","😐 Indifferent","Feeling indifferent 😐"],
+  ["emotional","🥹 Emotional","Feeling emotional 🥹"],
+  ["bored","🥱 Bored","Feeling bored 🥱"],
+  ["batman","🦇 Feeling Like Batman","Feeling like Batman 🦇"],
+  ["excited","🤩 Excited","Feeling excited 🤩"],
+  ["funky","💃 Funky","Feeling funky 💃"]
+];
 async function getMikaelMood(env){
   return env.LIZZY_CLAIMS.get(MIKAEL_MOOD_KEY,{type:"json"});
 }
@@ -386,6 +344,7 @@ const HQ_MESSAGE_INDEX="hq:messages:index:v1";
 const HQ_ACTIVITY_INDEX="hq:activity:index:v1";
 const HQ_CHESS_KEY="hq:chess:v1";
 const HQ_CHESS_HELP_INDEX="hq:chess:help:index:v1";
+const HQ_LESSON_INDEX="hq:lizzylessons:index:v1";
 const arrKV=async(env,key)=>{const x=await env.LIZZY_CLAIMS.get(key,{type:"json"});return Array.isArray(x)?x:[]};
 const saveArr=async(env,key,x)=>env.LIZZY_CLAIMS.put(key,JSON.stringify(x.slice(-300)));
 const hqAuth=(req,env,body=null)=>{
@@ -402,7 +361,31 @@ async function hqActivity(env,type,text,meta={}){
 }
 async function hqLetters(env){const xs=await arrKV(env,HQ_LETTER_INDEX);return xs.sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));}
 async function hqMessages(env){const xs=await arrKV(env,HQ_MESSAGE_INDEX);return xs.sort((a,b)=>String(a.createdAt).localeCompare(String(b.createdAt)));}
+async function hqLessons(env){const xs=await arrKV(env,HQ_LESSON_INDEX);return xs.sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));}
 const defaultChess=()=>({id:"chess-main",fen:"start",pgn:"",turn:"w",status:"active",lastMove:null,updatedAt:new Date().toISOString()});
+
+/* ===== 😈 MIKAEL HQ REMOTE ANNOYANCE =====
+   One pending effect at a time (a queue would just mean Lizzy gets
+   buried instantly — not the goal). Lizzy's "STOP ANNOYING ME" button
+   clears whatever's pending AND starts a real cooldown that HQ can see
+   and honours, so it isn't a fake button. */
+const ANNOY_PENDING_KEY="annoy:pending:v1";
+const ANNOY_COOLDOWN_KEY="annoy:cooldown:v1";
+const ANNOY_COOLDOWN_MINUTES=5;
+const ANNOY_EFFECTS=[
+  "button_move","infinite_loading","keyboard_chaos","mikael_appears",
+  "attitude_meter","upside_down","screen_wobble","unskippable_ad",
+  "did_you_know","petty_tax","airhorn","captcha_joke","eyes_follow",
+  "balloon_pop","fake_update"
+];
+async function getAnnoyPending(env){
+  return env.LIZZY_CLAIMS.get(ANNOY_PENDING_KEY,{type:"json"});
+}
+async function getAnnoyCooldown(env){
+  const c=await env.LIZZY_CLAIMS.get(ANNOY_COOLDOWN_KEY,{type:"json"});
+  if(c&&c.until&&new Date(c.until).getTime()>Date.now())return c;
+  return null;
+}
 
 export default{async fetch(req,env){
  if(req.method==="OPTIONS")return json({ok:true});
@@ -411,19 +394,10 @@ export default{async fetch(req,env){
  if(req.method==="GET"){
    if(u.searchParams.get("action")==="coop_chess"){const state=await env.LIZZY_CLAIMS.get(HQ_CHESS_KEY,{type:"json"})||defaultChess();return json({success:true,state});}
    if(u.searchParams.get("action")==="lizzy_messages"){const messages=await hqMessages(env);return json({success:true,messages:messages.filter(x=>x.status!=="handled").slice(-50)});}
-   if(u.searchParams.get("action")==="escape_state"||u.searchParams.get("escapeState")==="1"){
-     const state=await getEscapeState(env);
-     const trophy=await getTrophy(env);
-     return json({success:true,state,trophy:trophy||null});
-   }
    if(u.searchParams.get("action")==="annoy_state"){
      const pending=await getAnnoyPending(env);
      const cooldown=await getAnnoyCooldown(env);
      return json({success:true,pending:pending&&!pending.consumed?pending:null,cooldownUntil:cooldown?cooldown.until:null});
-   }
-   if(u.searchParams.get("action")==="escape_hints"||u.searchParams.get("escapeHints")==="1"){
-     const hints=await getEscapeHints(env);
-     return json({success:true,hints:hints.filter(h=>h.status==="open")});
    }
    if(u.searchParams.get("mikaelTokens")==="1"){
      const state=await getMikaelTokenState(env);
@@ -449,6 +423,10 @@ export default{async fetch(req,env){
      const thoughts=await listThoughts(env,50);
      return json({success:true,thoughts});
    }
+   if(u.searchParams.get("lizzyLessons")==="1"){
+     const lessons=await hqLessons(env);
+     return json({success:true,lessons});
+   }
    if(u.searchParams.get("pendingReverseRedemptions")==="1"){
      const ids=await getRedemptionIndex(env),items=[];
      for(const id of ids){
@@ -472,8 +450,17 @@ export default{async fetch(req,env){
    if(update.callback_query){
      const q=update.callback_query,data=q.data||"",sep=data.indexOf(":");
      if(sep<0)return json({ok:true});
-     const action=data.slice(0,sep),claimId=data.slice(sep+1),c=await getClaim(env,claimId);
+     const action=data.slice(0,sep),payload=data.slice(sep+1);
      await tg(env,"answerCallbackQuery",{callback_query_id:q.id});
+     if(action==="moodset"){
+       const opt=MIKAEL_MOOD_OPTIONS.find(([id])=>id===payload);
+       if(opt){
+         await setMikaelMood(env,opt[2],"telegram");
+         await tg(env,"editMessageText",{chat_id:q.message.chat.id,message_id:q.message.message_id,text:`💗 Mood set: ${opt[1]}\n\nLizzy's Today's Connection screen will show this.`});
+       }
+       return json({ok:true});
+     }
+     const claimId=payload,c=await getClaim(env,claimId);
      if(!c)return json({ok:true});
      if(action==="accept"){
        c.status="accepted";c.acceptedPrice=Number(c.offer||0);c.decidedAt=new Date().toISOString();await putClaim(env,c);await putShelfState(env,c);
@@ -515,6 +502,15 @@ export default{async fetch(req,env){
      // /miss — quick one-tap "missing you" message, no typing required.
      if(/^\/miss(?:@\w+)?$/i.test(txt)){
        await createMessage(env,"Mikael is missing you right now 💗","telegram");
+       return json({ok:true});
+     }
+     // /mood — button menu of quick moods. /mymood <text> still works for freeform.
+     if(/^\/mood(?:@\w+)?$/i.test(txt)){
+       const rows=[];
+       for(let i=0;i<MIKAEL_MOOD_OPTIONS.length;i+=2){
+         rows.push(MIKAEL_MOOD_OPTIONS.slice(i,i+2).map(([id,label])=>({text:label,callback_data:`moodset:${id}`})));
+       }
+       await tg(env,"sendMessage",{chat_id:chat,text:"💗 Pick your mood, or use /mymood <text> to write your own:",reply_markup:{inline_keyboard:rows}});
        return json({ok:true});
      }
      // /mymood <text> — set Mikael's current mood for the Today's Connection screen.
@@ -642,6 +638,40 @@ if(b.action==="reply_letter"){
   await hqActivity(env,"🖤 Letter Reply",`Mikael replied to ${l.subject}`,{letterId:lid});
   return json({success:true,letter:l});
 }
+if(b.action==="submit_lizzy_lesson"){
+  const text=S(b.text,600);
+  if(!text)return json({success:false,error:"Lesson is empty"},400);
+  const lesson={id:hqId("lesson"),text,rating:null,note:null,status:"unrated",createdAt:new Date().toISOString(),ratedAt:null};
+  const xs=await hqLessons(env);xs.push(lesson);await saveArr(env,HQ_LESSON_INDEX,xs);
+  await hqActivity(env,"🧠 New Lizzy Life Lesson",text,{lessonId:lesson.id});
+  await tg(env,"sendMessage",{chat_id:env.TELEGRAM_CHAT_ID,text:`🧠 NEW LIFE LESSON FROM LIZZY\n\n"${text}"\n\nOpen Mikael HQ to rate it.`}).catch(()=>{});
+  return json({success:true,lesson});
+}
+if(b.action==="hq_lizzy_lessons"){
+  if(!hqOnly(req,env,b))return json({success:false,error:"Unauthorized"},401);
+  return json({success:true,lessons:await hqLessons(env)});
+}
+if(b.action==="rate_lizzy_lesson"){
+  if(!hqOnly(req,env,b))return json({success:false,error:"Unauthorized"},401);
+  const lid=S(b.id,120),rating=S(b.rating,20),note=S(b.note||"",400);
+  if(!["helpful","useless"].includes(rating))return json({success:false,error:"Invalid rating"},400);
+  const xs=await hqLessons(env),l=xs.find(x=>x.id===lid);
+  if(!l)return json({success:false,error:"Lesson not found"},404);
+  l.rating=rating;l.note=note||null;l.status="rated";l.ratedAt=new Date().toISOString();
+  await saveArr(env,HQ_LESSON_INDEX,xs);
+  const label=rating==="helpful"?"👍 Helpful":"👎 Absolutely Useless";
+  const msgs=await hqMessages(env);
+  msgs.push({id:hqId("message"),kind:"lesson_rating",text:`🧠 Mikael rated your life lesson "${l.text}":\n\n${label}${note?`\n"${note}"`:""}`,status:"pending",createdAt:new Date().toISOString(),lessonId:lid});
+  await saveArr(env,HQ_MESSAGE_INDEX,msgs);
+  await hqActivity(env,"🧠 Lesson Rated",`Mikael rated "${l.text}" — ${label}`,{lessonId:lid});
+  return json({success:true,lesson:l});
+}
+if(b.action==="clear_lizzy_lessons"){
+  if(!hqOnly(req,env,b))return json({success:false,error:"Unauthorized"},401);
+  await saveArr(env,HQ_LESSON_INDEX,[]);
+  await hqActivity(env,"🧹 Lessons Cleared","All Lizzy Life Lessons were cleared from HQ.");
+  return json({success:true});
+}
 if(b.action==="clear_letters"){
   if(!hqOnly(req,env,b))return json({success:false,error:"Unauthorized"},401);
   await saveArr(env,HQ_LETTER_INDEX,[]);
@@ -702,6 +732,43 @@ if(b.action==="send_chess_hint"){
   const xs=await hqMessages(env);xs.push(m);await saveArr(env,HQ_MESSAGE_INDEX,xs);
   await hqActivity(env,"🎓 Chess Hint","Mikael sent Lizzy a chess tip.");
   return json({success:true});
+}
+
+/* =========================================================
+   😈 MIKAEL HQ REMOTE ANNOYANCE
+   ========================================================= */
+if((b.action||b.type)==="annoy_trigger"){
+  if(!hqOnly(req,env,b))return json({success:false,error:"Unauthorized"},401);
+  const cooldown=await getAnnoyCooldown(env);
+  if(cooldown)return json({success:false,cooldown:true,until:cooldown.until});
+  let effect=String(b.effect||"").trim();
+  if(!effect||effect==="random")effect=ANNOY_EFFECTS[Math.floor(Math.random()*ANNOY_EFFECTS.length)];
+  if(!ANNOY_EFFECTS.includes(effect))return json({success:false,error:"Unknown effect"},400);
+  const pending={effect,createdAt:new Date().toISOString(),consumed:false};
+  await env.LIZZY_CLAIMS.put(ANNOY_PENDING_KEY,JSON.stringify(pending));
+  await tg(env,"sendMessage",{chat_id:env.TELEGRAM_CHAT_ID,text:`😈 SENT LIZZY: ${effect.replace(/_/g," ")}`}).catch(()=>{});
+  return json({success:true,effect});
+}
+if((b.action||b.type)==="annoy_consume"){
+  const pending=await getAnnoyPending(env);
+  if(pending&&!pending.consumed){
+    pending.consumed=true;
+    await env.LIZZY_CLAIMS.put(ANNOY_PENDING_KEY,JSON.stringify(pending));
+  }
+  return json({success:true});
+}
+if((b.action||b.type)==="annoy_reset"){
+  if(!hqOnly(req,env,b))return json({success:false,error:"Unauthorized"},401);
+  await env.LIZZY_CLAIMS.delete(ANNOY_COOLDOWN_KEY);
+  await env.LIZZY_CLAIMS.delete(ANNOY_PENDING_KEY);
+  return json({success:true,cooldownUntil:null});
+}
+if((b.action||b.type)==="annoy_stop"){
+  await env.LIZZY_CLAIMS.delete(ANNOY_PENDING_KEY);
+  const until=new Date(Date.now()+ANNOY_COOLDOWN_MINUTES*60000).toISOString();
+  await env.LIZZY_CLAIMS.put(ANNOY_COOLDOWN_KEY,JSON.stringify({until}));
+  await tg(env,"sendMessage",{chat_id:env.TELEGRAM_CHAT_ID,text:`😤 LIZZY HIT "STOP ANNOYING ME"\n\nNo more annoyances until ${until}.`}).catch(()=>{});
+  return json({success:true,cooldownUntil:until});
 }
 
 async function notifyTelegram(text,type=eventType,reply_markup=null){
@@ -1678,131 +1745,9 @@ ${S(
    const key=`mikael:redemption:${id}`;
    const r=await env.LIZZY_CLAIMS.get(key,{type:"json"});
    if(!r)return json({success:false,error:"Redemption not found"},404);
-   if(!r.acknowledged){
-     r.acknowledged=true;r.acknowledgedAt=new Date().toISOString();
-     await env.LIZZY_CLAIMS.put(key,JSON.stringify(r),{expirationTtl:2592000});
-     await tg(env,"sendMessage",{chat_id:env.TELEGRAM_CHAT_ID,text:`✅ REVERSE TOKEN ACKNOWLEDGED\n\n${r.emoji} ${r.name}\nLizzy just tapped "Fine 🙄".`});
-   }
+   r.acknowledged=true;r.acknowledgedAt=new Date().toISOString();
+   await env.LIZZY_CLAIMS.put(key,JSON.stringify(r),{expirationTtl:2592000});
    return json({success:true});
- }
-
-/* =========================================================
-   🔐 CO-OP ESCAPE ROOM
-   ========================================================= */
- if((b.action||b.type)==="escape_start"){
-   const state=await getEscapeState(env);
-   if(state.status==="not_started"||b.force===true){
-     const fresh=defaultEscapeState();
-     fresh.status="in_progress";
-     fresh.startedAt=new Date().toISOString();
-     await putEscapeState(env,fresh);
-     await tg(env,"sendMessage",{chat_id:env.TELEGRAM_CHAT_ID,text:"🔐 ESCAPE ROOM STARTED\n\nThe timer is running. Good luck getting out of East High."});
-     return json({success:true,state:fresh});
-   }
-   return json({success:true,state});
- }
- if((b.action||b.type)==="escape_reset"){
-   if(!hqOnly(req,env,b))return json({success:false,error:"Unauthorized"},401);
-   await env.LIZZY_CLAIMS.delete(ESCAPE_TROPHY_KEY);
-   const fresh=defaultEscapeState();
-   await putEscapeState(env,fresh);
-   return json({success:true,state:fresh});
- }
- if((b.action||b.type)==="escape_submit_code"){
-   const lock=Number(b.lock);
-   const code=String(b.code||"").trim();
-   if(lock!==1&&lock!==2)return json({success:false,error:"Invalid lock number"},400);
-   const state=await getEscapeState(env);
-   if(state.status==="not_started")return json({success:false,error:"The room hasn't been started yet"},409);
-   if(lock===2&&state.status!=="lock1_complete"&&state.status!=="complete"){
-     return json({success:false,error:"The locker room door is still locked — solve Lock 1 first"},409);
-   }
-   state.attempts=state.attempts||{lock1:0,lock2:0};
-   state.attempts[`lock${lock}`]=(state.attempts[`lock${lock}`]||0)+1;
-   const expected=lock===1?LOCK1_CODE:LOCK2_CODE;
-   const correct=code===expected;
-   if(!correct){
-     await putEscapeState(env,state);
-     return json({success:true,correct:false,attempts:state.attempts[`lock${lock}`]});
-   }
-   const now=new Date().toISOString();
-   if(lock===1&&state.status==="in_progress"){
-     state.status="lock1_complete";
-     state.lock1CompletedAt=now;
-     await putEscapeState(env,state);
-     await tg(env,"sendMessage",{chat_id:env.TELEGRAM_CHAT_ID,text:"🔓 LOCK 1 SOLVED\n\nThe locker room is open. Now the gym doors..."});
-     return json({success:true,correct:true,state});
-   }
-   if(lock===2&&state.status==="lock1_complete"){
-     state.status="complete";
-     state.completedAt=now;
-     await putEscapeState(env,state);
-     const elapsedMs=new Date(state.completedAt)-new Date(state.startedAt);
-     const elapsedMin=Math.max(1,Math.round(elapsedMs/60000));
-     const trophy={
-       id:eid(),
-       title:"🏆 Wildcat Escape Champions",
-       subtitle:"Escaped the East High locker room & gym — together.",
-       completedAt:now,
-       elapsedMinutes:elapsedMin
-     };
-     await env.LIZZY_CLAIMS.put(ESCAPE_TROPHY_KEY,JSON.stringify(trophy));
-     await tg(env,"sendMessage",{chat_id:env.TELEGRAM_CHAT_ID,text:`🏆 ESCAPE COMPLETE!\n\nYou both got out in ${elapsedMin} minute(s). Trophy has been placed in Our World.`});
-     return json({success:true,correct:true,state,trophy});
-   }
-   // Already-solved lock resubmitted — treat as a harmless correct no-op.
-   return json({success:true,correct:true,state});
- }
- if((b.action||b.type)==="escape_hint_request"){
-   const text=S(b.text,500);
-   if(!text)return json({success:false,error:"Hint request is empty"},400);
-   const h={id:eid(),text,status:"open",createdAt:new Date().toISOString()};
-   await env.LIZZY_CLAIMS.put(`escape:hint:${h.id}`,JSON.stringify(h),{expirationTtl:86400});
-   const ids=await env.LIZZY_CLAIMS.get(ESCAPE_HINT_INDEX_KEY,{type:"json"});
-   const list=Array.isArray(ids)?ids:[];list.push(h.id);
-   await env.LIZZY_CLAIMS.put(ESCAPE_HINT_INDEX_KEY,JSON.stringify(list.slice(-50)));
-   await tg(env,"sendMessage",{chat_id:env.TELEGRAM_CHAT_ID,text:`🆘 ESCAPE ROOM — LIZZY NEEDS A HINT\n\n"${text}"`});
-   return json({success:true,hint:h});
- }
- if((b.action||b.type)==="escape_resolve_hint"){
-   if(!hqOnly(req,env,b))return json({success:false,error:"Unauthorized"},401);
-   const id=String(b.id||"").trim();
-   const h=await env.LIZZY_CLAIMS.get(`escape:hint:${id}`,{type:"json"});
-   if(!h)return json({success:false,error:"Hint request not found"},404);
-   h.status="handled";
-   await env.LIZZY_CLAIMS.put(`escape:hint:${id}`,JSON.stringify(h),{expirationTtl:86400});
-   return json({success:true});
- }
-
-/* =========================================================
-   😈 MIKAEL HQ REMOTE ANNOYANCE
-   ========================================================= */
- if((b.action||b.type)==="annoy_trigger"){
-   if(!hqOnly(req,env,b))return json({success:false,error:"Unauthorized"},401);
-   const cooldown=await getAnnoyCooldown(env);
-   if(cooldown)return json({success:false,cooldown:true,until:cooldown.until});
-   let effect=String(b.effect||"").trim();
-   if(!effect||effect==="random")effect=ANNOY_EFFECTS[Math.floor(Math.random()*ANNOY_EFFECTS.length)];
-   if(!ANNOY_EFFECTS.includes(effect))return json({success:false,error:"Unknown effect"},400);
-   const pending={effect,createdAt:new Date().toISOString(),consumed:false};
-   await env.LIZZY_CLAIMS.put(ANNOY_PENDING_KEY,JSON.stringify(pending));
-   await tg(env,"sendMessage",{chat_id:env.TELEGRAM_CHAT_ID,text:`😈 SENT LIZZY: ${effect.replace(/_/g," ")}`}).catch(()=>{});
-   return json({success:true,effect});
- }
- if((b.action||b.type)==="annoy_consume"){
-   const pending=await getAnnoyPending(env);
-   if(pending&&!pending.consumed){
-     pending.consumed=true;
-     await env.LIZZY_CLAIMS.put(ANNOY_PENDING_KEY,JSON.stringify(pending));
-   }
-   return json({success:true});
- }
- if((b.action||b.type)==="annoy_stop"){
-   await env.LIZZY_CLAIMS.delete(ANNOY_PENDING_KEY);
-   const until=new Date(Date.now()+ANNOY_COOLDOWN_MINUTES*60000).toISOString();
-   await env.LIZZY_CLAIMS.put(ANNOY_COOLDOWN_KEY,JSON.stringify({until}));
-   await tg(env,"sendMessage",{chat_id:env.TELEGRAM_CHAT_ID,text:`😤 LIZZY HIT "STOP ANNOYING ME"\n\nNo more annoyances until ${until}.`}).catch(()=>{});
-   return json({success:true,cooldownUntil:until});
  }
 
 
