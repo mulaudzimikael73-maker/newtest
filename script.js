@@ -4880,6 +4880,34 @@ async function annoyApi(action, body) {
   return r.json();
 }
 
+// ---- real photos used by annoy effects ----
+const MIKAEL_PHOTOS = [
+  "assets/captcha/mikael-1.jpg", "assets/captcha/mikael-2.jpg", "assets/captcha/mikael-3.jpg",
+  "assets/captcha/mikael-4.jpg", "assets/captcha/mikael-5.jpg", "assets/captcha/mikael-6.jpg",
+  "assets/captcha/mikael-7.jpg"
+];
+const LIZZY_PHOTOS = [
+  "assets/captcha/lizzy-1.jpg", "assets/captcha/lizzy-2.jpg", "assets/captcha/lizzy-3.jpg",
+  "assets/captcha/lizzy-4.jpg", "assets/captcha/lizzy-5.jpg", "assets/captcha/lizzy-6.jpg",
+  "assets/captcha/lizzy-7.jpg", "assets/captcha/lizzy-8.jpg", "assets/captcha/lizzy-9.jpg",
+  "assets/captcha/lizzy-10.jpg"
+];
+const DECOY_PHOTOS = ["assets/captcha/decoy-1.jpg", "assets/captcha/decoy-2.jpg"];
+const MIKAEL_APPEARS_PHOTOS = [
+  "assets/mikael-appears/mikael-1.jpg", "assets/mikael-appears/mikael-2.jpg",
+  "assets/mikael-appears/mikael-3.jpg", "assets/mikael-appears/mikael-4.jpg",
+  "assets/mikael-appears/mikael-5.jpg", "assets/mikael-appears/mikael-6.jpg",
+  "assets/mikael-appears/mikael-7.jpg"
+];
+function shuffleCopy(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 function ensureAnnoyStyles() {
   if (document.getElementById("annoyStyles")) return;
   const s = document.createElement("style");
@@ -4906,6 +4934,17 @@ function ensureAnnoyStyles() {
     .annoyEye{width:34px;height:34px;background:#fff;border-radius:50%;position:relative;box-shadow:0 4px 10px rgba(0,0,0,.3)}
     .annoyPupil{width:12px;height:12px;background:#222;border-radius:50%;position:absolute;top:11px;left:11px}
     .annoyBalloon{position:absolute;font-size:40px;cursor:pointer;user-select:none;transition:transform .15s}
+    .captchaCard{max-width:320px}
+    .captchaGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:4px 0 12px}
+    .captchaTile{position:relative;aspect-ratio:1/1;border-radius:8px;overflow:hidden;cursor:pointer;
+      border:3px solid transparent;transition:border-color .15s}
+    .captchaTile img{width:100%;height:100%;object-fit:cover;display:block}
+    .captchaTile.captchaSelected{border-color:#e6785a}
+    .captchaTile.captchaSelected::after{content:"✓";position:absolute;top:4px;right:4px;background:#e6785a;
+      color:#1a0f0a;font-weight:800;border-radius:50%;width:18px;height:18px;font-size:12px;
+      display:flex;align-items:center;justify-content:center}
+    .mikaelAppearsPhoto{width:140px;height:140px;object-fit:cover;border-radius:50%;margin:6px auto 12px;
+      display:block;border:3px solid #e6785a}
   `;
   document.head.appendChild(s);
 }
@@ -4966,12 +5005,16 @@ const ANNOY_EFFECTS = {
     setTimeout(() => buttons.forEach((b, idx) => { b.textContent = original[idx]; }), 7000);
   },
   mikael_appears() {
+    ensureAnnoyStyles();
     const lines = [
       "Did you miss me? 😌", "Thinking about you. Mostly about snacks too, but mostly you.",
       "Just checking you're still there. 👀", "10/10, would annoy again.",
       "This is your official reminder that I exist."
     ];
-    annoyOverlay("🖤 Mikael Appears", lines[Math.floor(Math.random() * lines.length)], "Okay 🙄");
+    const photo = MIKAEL_APPEARS_PHOTOS[Math.floor(Math.random() * MIKAEL_APPEARS_PHOTOS.length)];
+    const body = `<img class="mikaelAppearsPhoto" src="${photo}" alt="Mikael">` +
+      lines[Math.floor(Math.random() * lines.length)];
+    annoyOverlay("🖤 Mikael Appears", body, "Okay 🙄");
   },
   attitude_meter() {
     const w = annoyOverlay("📊 Attitude Meter", `<span id="attMeterText">Lizzy Attitude: 0%</span><br><div style="height:10px;background:#ffffff22;border-radius:8px;margin-top:8px;overflow:hidden"><div id="attMeterBar" style="height:100%;width:0%;background:#e6785a;transition:width .3s"></div></div>`, "");
@@ -5066,20 +5109,64 @@ const ANNOY_EFFECTS = {
     annoyToast("📯 HONK", 1500);
   },
   captcha_joke() {
+    ensureAnnoyStyles();
     const prompts = [
-      { text: "Prove you're not a stalker. Select all images of Mikael being right.", btn: "I am not a stalker" },
-      { text: "Verify you're human. Select all images of Mikael's questionable fashion choices.", btn: "Verified ✅" },
-      { text: "Security check: select all images where Mikael is definitely not stalking anyone. (He's Batman. It's different.)", btn: "Understood" },
-      { text: "Confirm you're not a robot. Select all images of Mikael pretending he wasn't just staring at his phone.", btn: "I confirm" },
-      { text: "Prove you're paying attention. Select all images of Mikael being 'busy' when it's actually just snack time.", btn: "Fair enough" },
-      { text: "Prove you're not a robot. Select all images of Lizzy pretending she's not tired.", btn: "I plead the fifth" },
-      { text: "Verify you're human. Select all images of Lizzy defending Cody for absolutely no reason.", btn: "No comment" },
-      { text: "Security check: select all images of Lizzy claiming she can see fine without her glasses.", btn: "I can see fine" },
-      { text: "Confirm you're not a bot. Select all images of Lizzy taking way too long to reply to a text.", btn: "It was one time" },
-      { text: "Prove you're human. Select all images of Lizzy's pillow collection that has clearly become a hazard.", btn: "They're all essential" }
+      { text: "Prove you're not a stalker. Select all images of Mikael being right.", btn: "I am not a stalker", target: "mikael" },
+      { text: "Verify you're human. Select all images of Mikael's questionable fashion choices.", btn: "Verified ✅", target: "mikael" },
+      { text: "Security check: select all images where Mikael is definitely not stalking anyone. (He's Batman. It's different.)", btn: "Understood", target: "mikael" },
+      { text: "Confirm you're not a robot. Select all images of Mikael pretending he wasn't just staring at his phone.", btn: "I confirm", target: "mikael" },
+      { text: "Prove you're paying attention. Select all images of Mikael being 'busy' when it's actually just snack time.", btn: "Fair enough", target: "mikael" },
+      { text: "Prove you're not a robot. Select all images of Lizzy pretending she's not tired.", btn: "I plead the fifth", target: "lizzy" },
+      { text: "Verify you're human. Select all images of Lizzy defending Cody for absolutely no reason.", btn: "No comment", target: "lizzy" },
+      { text: "Security check: select all images of Lizzy claiming she can see fine without her glasses.", btn: "I can see fine", target: "lizzy" },
+      { text: "Confirm you're not a bot. Select all images of Lizzy taking way too long to reply to a text.", btn: "It was one time", target: "lizzy" },
+      { text: "Prove you're human. Select all images of Lizzy's pillow collection that has clearly become a hazard.", btn: "They're all essential", target: "lizzy" }
     ];
     const p = prompts[Math.floor(Math.random() * prompts.length)];
-    annoyOverlay("🤖 Quick Verification", p.text + "<br><br>🖼️🖼️🖼️🖼️", p.btn);
+    const targetPhotos = p.target === "mikael" ? MIKAEL_PHOTOS : LIZZY_PHOTOS;
+    const otherPhotos = p.target === "mikael" ? LIZZY_PHOTOS : MIKAEL_PHOTOS;
+
+    const correctCount = 3;
+    const correct = shuffleCopy(targetPhotos).slice(0, correctCount);
+    const decoyPool = shuffleCopy([...otherPhotos, ...DECOY_PHOTOS]);
+    const decoys = decoyPool.slice(0, 6 - correct.length);
+    const tiles = shuffleCopy([
+      ...correct.map(src => ({ src, correct: true })),
+      ...decoys.map(src => ({ src, correct: false }))
+    ]);
+
+    const gridHtml = `<div class="captchaGrid">` +
+      tiles.map((t, i) => `<div class="captchaTile" data-correct="${t.correct}"><img src="${t.src}" alt=""></div>`).join("") +
+      `</div>`;
+
+    const wrap = document.createElement("div");
+    wrap.className = "annoyOverlay";
+    wrap.innerHTML = `<div class="annoyCard captchaCard"><h3>🤖 Quick Verification</h3><p>${p.text}</p>${gridHtml}<button>${p.btn}</button></div>`;
+    document.body.appendChild(wrap);
+
+    wrap.querySelectorAll(".captchaTile").forEach(tile => {
+      tile.onclick = () => tile.classList.toggle("captchaSelected");
+    });
+
+    wrap.querySelector("button").onclick = () => {
+      const allTiles = wrap.querySelectorAll(".captchaTile");
+      let allMatch = true;
+      allTiles.forEach(t => {
+        const isCorrect = t.dataset.correct === "true";
+        const isSelected = t.classList.contains("captchaSelected");
+        if (isCorrect !== isSelected) allMatch = false;
+      });
+      if (allMatch) {
+        wrap.remove();
+        annoyToast("✅ Verified. Somehow.", 2200);
+      } else {
+        const card = wrap.querySelector(".annoyCard");
+        card.style.animation = "annoyWobble .18s ease 3";
+        setTimeout(() => { card.style.animation = ""; }, 700);
+        annoyToast("❌ Nope. Try again, detective.", 1800);
+      }
+    };
+    return wrap;
   },
   eyes_follow() {
     ensureAnnoyStyles();
