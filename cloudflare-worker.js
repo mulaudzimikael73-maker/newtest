@@ -41,6 +41,66 @@ async function putRedemptionIndex(env,x){
 }
 function rid(){return `reverse_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;}
 
+/* ===== 🔐 CO-OP ESCAPE ROOM — "Locked In at East High" =====
+   Two locks, solved together in real time. The correct codes live ONLY
+   here on the server — they are never returned by any GET/POST response,
+   so neither device can read them out of network traffic or source code
+   shipped to the browser. Progress + timer state IS shared, since both
+   of you are meant to see live status. */
+const ESCAPE_STATE_KEY="escape:room:v1";
+const ESCAPE_HINT_INDEX_KEY="escape:hints:index:v1";
+const ESCAPE_TROPHY_KEY="escape:trophy:v1";
+// Secret — do not print/log/return these anywhere. Change them any time
+// by editing this line and redeploying; nothing else needs to change.
+const LOCK1_CODE="5481";
+const LOCK2_CODE="1235";
+const eid=()=>`escape_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+function defaultEscapeState(){
+  return {status:"not_started",startedAt:null,lock1CompletedAt:null,completedAt:null,attempts:{lock1:0,lock2:0}};
+}
+async function getEscapeState(env){
+  const s=await env.LIZZY_CLAIMS.get(ESCAPE_STATE_KEY,{type:"json"});
+  return s&&typeof s==="object"?{...defaultEscapeState(),...s}:defaultEscapeState();
+}
+async function putEscapeState(env,s){
+  await env.LIZZY_CLAIMS.put(ESCAPE_STATE_KEY,JSON.stringify(s));
+}
+async function getEscapeHints(env){
+  const ids=await env.LIZZY_CLAIMS.get(ESCAPE_HINT_INDEX_KEY,{type:"json"});
+  const list=Array.isArray(ids)?ids:[],items=[];
+  for(const id of list){
+    const h=await env.LIZZY_CLAIMS.get(`escape:hint:${id}`,{type:"json"});
+    if(h)items.push(h);
+  }
+  return items;
+}
+async function getTrophy(env){
+  return env.LIZZY_CLAIMS.get(ESCAPE_TROPHY_KEY,{type:"json"});
+}
+
+/* ===== 😈 MIKAEL HQ REMOTE ANNOYANCE =====
+   One pending effect at a time (a queue would just mean Lizzy gets
+   buried instantly — not the goal). Lizzy's "STOP ANNOYING ME" button
+   clears whatever's pending AND starts a real cooldown that HQ can see
+   and honours, so it isn't a fake button. */
+const ANNOY_PENDING_KEY="annoy:pending:v1";
+const ANNOY_COOLDOWN_KEY="annoy:cooldown:v1";
+const ANNOY_COOLDOWN_MINUTES=20;
+const ANNOY_EFFECTS=[
+  "button_move","infinite_loading","keyboard_chaos","mikael_appears",
+  "attitude_meter","upside_down","screen_wobble","unskippable_ad",
+  "did_you_know","petty_tax","airhorn","captcha_joke","eyes_follow",
+  "balloon_pop","fake_update"
+];
+async function getAnnoyPending(env){
+  return env.LIZZY_CLAIMS.get(ANNOY_PENDING_KEY,{type:"json"});
+}
+async function getAnnoyCooldown(env){
+  const c=await env.LIZZY_CLAIMS.get(ANNOY_COOLDOWN_KEY,{type:"json"});
+  if(c&&c.until&&new Date(c.until).getTime()>Date.now())return c;
+  return null;
+}
+
 /* Shared grant logic — used by the mikael_reverse_token_award POST handler
    AND by the /token Telegram command. Keeps inventory + history in sync
    no matter which path awarded the token. */
@@ -326,18 +386,6 @@ const HQ_MESSAGE_INDEX="hq:messages:index:v1";
 const HQ_ACTIVITY_INDEX="hq:activity:index:v1";
 const HQ_CHESS_KEY="hq:chess:v1";
 const HQ_CHESS_HELP_INDEX="hq:chess:help:index:v1";
-/* ---- Escape Room (Locker Room -> Gym) ----
-   Codes live ONLY here on the server. No GET or HQ action ever returns
-   them — escape_submit only ever answers true/false. */
-const HQ_ESCAPE_KEY="hq:escape:v1";
-const HQ_TROPHY_INDEX="hq:trophies:index:v1";
-const ESCAPE_STAGES=["locker_room","gym"];
-const ESCAPE_CODES={locker_room:"4895",gym:"8431"};
-const defaultEscape=()=>({stage:"locker_room",startedAt:null,lockerSolvedAt:null,gymSolvedAt:null,completedAt:null,trophyAwarded:false,attempts:{locker_room:0,gym:0}});
-function publicEscape(s){
-  const elapsedSeconds=s.startedAt?Math.max(0,Math.round(((s.completedAt?new Date(s.completedAt):new Date())-new Date(s.startedAt))/1000)):0;
-  return{stage:s.stage,startedAt:s.startedAt,lockerSolvedAt:s.lockerSolvedAt,gymSolvedAt:s.gymSolvedAt,completedAt:s.completedAt,trophyAwarded:!!s.trophyAwarded,attempts:s.attempts||{locker_room:0,gym:0},elapsedSeconds};
-}
 const arrKV=async(env,key)=>{const x=await env.LIZZY_CLAIMS.get(key,{type:"json"});return Array.isArray(x)?x:[]};
 const saveArr=async(env,key,x)=>env.LIZZY_CLAIMS.put(key,JSON.stringify(x.slice(-300)));
 const hqAuth=(req,env,body=null)=>{
@@ -362,9 +410,21 @@ export default{async fetch(req,env){
 
  if(req.method==="GET"){
    if(u.searchParams.get("action")==="coop_chess"){const state=await env.LIZZY_CLAIMS.get(HQ_CHESS_KEY,{type:"json"})||defaultChess();return json({success:true,state});}
-   if(u.searchParams.get("action")==="escape_status"){const s=await env.LIZZY_CLAIMS.get(HQ_ESCAPE_KEY,{type:"json"})||defaultEscape();return json({success:true,state:publicEscape(s)});}
-   if(u.searchParams.get("action")==="coop_trophies"){const xs=await arrKV(env,HQ_TROPHY_INDEX);return json({success:true,trophies:xs.slice().reverse()});}
    if(u.searchParams.get("action")==="lizzy_messages"){const messages=await hqMessages(env);return json({success:true,messages:messages.filter(x=>x.status!=="handled").slice(-50)});}
+   if(u.searchParams.get("action")==="escape_state"||u.searchParams.get("escapeState")==="1"){
+     const state=await getEscapeState(env);
+     const trophy=await getTrophy(env);
+     return json({success:true,state,trophy:trophy||null});
+   }
+   if(u.searchParams.get("action")==="annoy_state"){
+     const pending=await getAnnoyPending(env);
+     const cooldown=await getAnnoyCooldown(env);
+     return json({success:true,pending:pending&&!pending.consumed?pending:null,cooldownUntil:cooldown?cooldown.until:null});
+   }
+   if(u.searchParams.get("action")==="escape_hints"||u.searchParams.get("escapeHints")==="1"){
+     const hints=await getEscapeHints(env);
+     return json({success:true,hints:hints.filter(h=>h.status==="open")});
+   }
    if(u.searchParams.get("mikaelTokens")==="1"){
      const state=await getMikaelTokenState(env);
      return json({success:true,state});
@@ -641,64 +701,6 @@ if(b.action==="send_chess_hint"){
   const m={id:hqId("message"),kind:"message",text:`🎓 Mikael's chess tip: ${text}`,status:"pending",createdAt:new Date().toISOString()};
   const xs=await hqMessages(env);xs.push(m);await saveArr(env,HQ_MESSAGE_INDEX,xs);
   await hqActivity(env,"🎓 Chess Hint","Mikael sent Lizzy a chess tip.");
-  return json({success:true});
-}
-
-/* ---- Escape Room actions ----
-   Lizzy side (no key): escape_start, escape_submit
-   Mikael HQ side (needs MIKAEL_HQ_KEY): escape_reset
-   Status/trophies are public reads above since neither exposes a code. */
-if(b.action==="escape_status"){
-  const s=await env.LIZZY_CLAIMS.get(HQ_ESCAPE_KEY,{type:"json"})||defaultEscape();
-  return json({success:true,state:publicEscape(s)});
-}
-if(b.action==="coop_trophies"){
-  const xs=await arrKV(env,HQ_TROPHY_INDEX);
-  return json({success:true,trophies:xs.slice().reverse()});
-}
-if(b.action==="escape_start"){
-  let s=await env.LIZZY_CLAIMS.get(HQ_ESCAPE_KEY,{type:"json"})||defaultEscape();
-  if(!s.startedAt){
-    s.startedAt=new Date().toISOString();
-    await env.LIZZY_CLAIMS.put(HQ_ESCAPE_KEY,JSON.stringify(s));
-    await hqActivity(env,"🔐 Escape Room Started","Lizzy started the escape room.");
-    await tg(env,"sendMessage",{chat_id:env.TELEGRAM_CHAT_ID,text:"🔐 Lizzy just started the escape room. Clock's running."}).catch(()=>{});
-  }
-  return json({success:true,state:publicEscape(s)});
-}
-if(b.action==="escape_submit"){
-  const stage=S(b.stage,40),code=S(b.code,20).replace(/\D/g,"");
-  if(!ESCAPE_STAGES.includes(stage))return json({success:false,error:"Unknown stage"},400);
-  let s=await env.LIZZY_CLAIMS.get(HQ_ESCAPE_KEY,{type:"json"})||defaultEscape();
-  if(!s.startedAt)s.startedAt=new Date().toISOString();
-  s.attempts=s.attempts||{locker_room:0,gym:0};
-  if(s.stage!==stage){await env.LIZZY_CLAIMS.put(HQ_ESCAPE_KEY,JSON.stringify(s));return json({success:true,correct:false,state:publicEscape(s),error:"That lock isn't active yet."});}
-  s.attempts[stage]=(s.attempts[stage]||0)+1;
-  const correct=!!code&&code===ESCAPE_CODES[stage];
-  if(!correct){await env.LIZZY_CLAIMS.put(HQ_ESCAPE_KEY,JSON.stringify(s));return json({success:true,correct:false,state:publicEscape(s)});}
-  const now=new Date().toISOString();
-  if(stage==="locker_room"){
-    s.lockerSolvedAt=now;s.stage="gym";
-    await hqActivity(env,"🔓 Lock Solved","Lizzy solved the locker room lock.");
-    await tg(env,"sendMessage",{chat_id:env.TELEGRAM_CHAT_ID,text:"🔓 Lizzy escaped the locker room. On to the gym…"}).catch(()=>{});
-  }else if(stage==="gym"){
-    s.gymSolvedAt=now;s.completedAt=now;s.stage="complete";
-    await hqActivity(env,"🔓 Lock Solved","Lizzy solved the gym lock and finished the escape room.");
-    if(!s.trophyAwarded){
-      s.trophyAwarded=true;
-      const trophy={id:hqId("trophy"),name:"Senior Prank Survivor",emoji:"🏆",description:"Escaped the locker room and the gym after the seniors' lights-out prank.",wonAt:now};
-      const xs=await arrKV(env,HQ_TROPHY_INDEX);xs.push(trophy);await saveArr(env,HQ_TROPHY_INDEX,xs);
-      await hqActivity(env,"🏆 Trophy Won","Lizzy earned the Senior Prank Survivor trophy.",{trophyId:trophy.id});
-      await tg(env,"sendMessage",{chat_id:env.TELEGRAM_CHAT_ID,text:"🏆 Lizzy escaped the gym! Trophy earned: Senior Prank Survivor 🖤"}).catch(()=>{});
-    }
-  }
-  await env.LIZZY_CLAIMS.put(HQ_ESCAPE_KEY,JSON.stringify(s));
-  return json({success:true,correct:true,state:publicEscape(s)});
-}
-if(b.action==="escape_reset"){
-  if(!hqOnly(req,env,b))return json({success:false,error:"Unauthorized"},401);
-  await env.LIZZY_CLAIMS.put(HQ_ESCAPE_KEY,JSON.stringify(defaultEscape()));
-  await hqActivity(env,"🔄 Escape Reset","Escape room progress was reset (codes unchanged).");
   return json({success:true});
 }
 
@@ -1676,9 +1678,131 @@ ${S(
    const key=`mikael:redemption:${id}`;
    const r=await env.LIZZY_CLAIMS.get(key,{type:"json"});
    if(!r)return json({success:false,error:"Redemption not found"},404);
-   r.acknowledged=true;r.acknowledgedAt=new Date().toISOString();
-   await env.LIZZY_CLAIMS.put(key,JSON.stringify(r),{expirationTtl:2592000});
+   if(!r.acknowledged){
+     r.acknowledged=true;r.acknowledgedAt=new Date().toISOString();
+     await env.LIZZY_CLAIMS.put(key,JSON.stringify(r),{expirationTtl:2592000});
+     await tg(env,"sendMessage",{chat_id:env.TELEGRAM_CHAT_ID,text:`✅ REVERSE TOKEN ACKNOWLEDGED\n\n${r.emoji} ${r.name}\nLizzy just tapped "Fine 🙄".`});
+   }
    return json({success:true});
+ }
+
+/* =========================================================
+   🔐 CO-OP ESCAPE ROOM
+   ========================================================= */
+ if((b.action||b.type)==="escape_start"){
+   const state=await getEscapeState(env);
+   if(state.status==="not_started"||b.force===true){
+     const fresh=defaultEscapeState();
+     fresh.status="in_progress";
+     fresh.startedAt=new Date().toISOString();
+     await putEscapeState(env,fresh);
+     await tg(env,"sendMessage",{chat_id:env.TELEGRAM_CHAT_ID,text:"🔐 ESCAPE ROOM STARTED\n\nThe timer is running. Good luck getting out of East High."});
+     return json({success:true,state:fresh});
+   }
+   return json({success:true,state});
+ }
+ if((b.action||b.type)==="escape_reset"){
+   if(!hqOnly(req,env,b))return json({success:false,error:"Unauthorized"},401);
+   await env.LIZZY_CLAIMS.delete(ESCAPE_TROPHY_KEY);
+   const fresh=defaultEscapeState();
+   await putEscapeState(env,fresh);
+   return json({success:true,state:fresh});
+ }
+ if((b.action||b.type)==="escape_submit_code"){
+   const lock=Number(b.lock);
+   const code=String(b.code||"").trim();
+   if(lock!==1&&lock!==2)return json({success:false,error:"Invalid lock number"},400);
+   const state=await getEscapeState(env);
+   if(state.status==="not_started")return json({success:false,error:"The room hasn't been started yet"},409);
+   if(lock===2&&state.status!=="lock1_complete"&&state.status!=="complete"){
+     return json({success:false,error:"The locker room door is still locked — solve Lock 1 first"},409);
+   }
+   state.attempts=state.attempts||{lock1:0,lock2:0};
+   state.attempts[`lock${lock}`]=(state.attempts[`lock${lock}`]||0)+1;
+   const expected=lock===1?LOCK1_CODE:LOCK2_CODE;
+   const correct=code===expected;
+   if(!correct){
+     await putEscapeState(env,state);
+     return json({success:true,correct:false,attempts:state.attempts[`lock${lock}`]});
+   }
+   const now=new Date().toISOString();
+   if(lock===1&&state.status==="in_progress"){
+     state.status="lock1_complete";
+     state.lock1CompletedAt=now;
+     await putEscapeState(env,state);
+     await tg(env,"sendMessage",{chat_id:env.TELEGRAM_CHAT_ID,text:"🔓 LOCK 1 SOLVED\n\nThe locker room is open. Now the gym doors..."});
+     return json({success:true,correct:true,state});
+   }
+   if(lock===2&&state.status==="lock1_complete"){
+     state.status="complete";
+     state.completedAt=now;
+     await putEscapeState(env,state);
+     const elapsedMs=new Date(state.completedAt)-new Date(state.startedAt);
+     const elapsedMin=Math.max(1,Math.round(elapsedMs/60000));
+     const trophy={
+       id:eid(),
+       title:"🏆 Wildcat Escape Champions",
+       subtitle:"Escaped the East High locker room & gym — together.",
+       completedAt:now,
+       elapsedMinutes:elapsedMin
+     };
+     await env.LIZZY_CLAIMS.put(ESCAPE_TROPHY_KEY,JSON.stringify(trophy));
+     await tg(env,"sendMessage",{chat_id:env.TELEGRAM_CHAT_ID,text:`🏆 ESCAPE COMPLETE!\n\nYou both got out in ${elapsedMin} minute(s). Trophy has been placed in Our World.`});
+     return json({success:true,correct:true,state,trophy});
+   }
+   // Already-solved lock resubmitted — treat as a harmless correct no-op.
+   return json({success:true,correct:true,state});
+ }
+ if((b.action||b.type)==="escape_hint_request"){
+   const text=S(b.text,500);
+   if(!text)return json({success:false,error:"Hint request is empty"},400);
+   const h={id:eid(),text,status:"open",createdAt:new Date().toISOString()};
+   await env.LIZZY_CLAIMS.put(`escape:hint:${h.id}`,JSON.stringify(h),{expirationTtl:86400});
+   const ids=await env.LIZZY_CLAIMS.get(ESCAPE_HINT_INDEX_KEY,{type:"json"});
+   const list=Array.isArray(ids)?ids:[];list.push(h.id);
+   await env.LIZZY_CLAIMS.put(ESCAPE_HINT_INDEX_KEY,JSON.stringify(list.slice(-50)));
+   await tg(env,"sendMessage",{chat_id:env.TELEGRAM_CHAT_ID,text:`🆘 ESCAPE ROOM — LIZZY NEEDS A HINT\n\n"${text}"`});
+   return json({success:true,hint:h});
+ }
+ if((b.action||b.type)==="escape_resolve_hint"){
+   if(!hqOnly(req,env,b))return json({success:false,error:"Unauthorized"},401);
+   const id=String(b.id||"").trim();
+   const h=await env.LIZZY_CLAIMS.get(`escape:hint:${id}`,{type:"json"});
+   if(!h)return json({success:false,error:"Hint request not found"},404);
+   h.status="handled";
+   await env.LIZZY_CLAIMS.put(`escape:hint:${id}`,JSON.stringify(h),{expirationTtl:86400});
+   return json({success:true});
+ }
+
+/* =========================================================
+   😈 MIKAEL HQ REMOTE ANNOYANCE
+   ========================================================= */
+ if((b.action||b.type)==="annoy_trigger"){
+   if(!hqOnly(req,env,b))return json({success:false,error:"Unauthorized"},401);
+   const cooldown=await getAnnoyCooldown(env);
+   if(cooldown)return json({success:false,cooldown:true,until:cooldown.until});
+   let effect=String(b.effect||"").trim();
+   if(!effect||effect==="random")effect=ANNOY_EFFECTS[Math.floor(Math.random()*ANNOY_EFFECTS.length)];
+   if(!ANNOY_EFFECTS.includes(effect))return json({success:false,error:"Unknown effect"},400);
+   const pending={effect,createdAt:new Date().toISOString(),consumed:false};
+   await env.LIZZY_CLAIMS.put(ANNOY_PENDING_KEY,JSON.stringify(pending));
+   await tg(env,"sendMessage",{chat_id:env.TELEGRAM_CHAT_ID,text:`😈 SENT LIZZY: ${effect.replace(/_/g," ")}`}).catch(()=>{});
+   return json({success:true,effect});
+ }
+ if((b.action||b.type)==="annoy_consume"){
+   const pending=await getAnnoyPending(env);
+   if(pending&&!pending.consumed){
+     pending.consumed=true;
+     await env.LIZZY_CLAIMS.put(ANNOY_PENDING_KEY,JSON.stringify(pending));
+   }
+   return json({success:true});
+ }
+ if((b.action||b.type)==="annoy_stop"){
+   await env.LIZZY_CLAIMS.delete(ANNOY_PENDING_KEY);
+   const until=new Date(Date.now()+ANNOY_COOLDOWN_MINUTES*60000).toISOString();
+   await env.LIZZY_CLAIMS.put(ANNOY_COOLDOWN_KEY,JSON.stringify({until}));
+   await tg(env,"sendMessage",{chat_id:env.TELEGRAM_CHAT_ID,text:`😤 LIZZY HIT "STOP ANNOYING ME"\n\nNo more annoyances until ${until}.`}).catch(()=>{});
+   return json({success:true,cooldownUntil:until});
  }
 
 

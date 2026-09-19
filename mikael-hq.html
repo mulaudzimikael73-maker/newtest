@@ -1,9 +1,94 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mikael HQ — Letters & Chess</title><link rel="stylesheet" href="mikael-hq.css?v=20260913-1330"></head><body>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mikael HQ — Letters & Chess</title><link rel="stylesheet" href="mikael-hq.css?v=20260916-annoy-lizzy"></head><body>
 <div id="login" class="screen"><div class="login-card"><div class="seal">🖤</div><p class="eyebrow">LIZZYOS // PRIVATE SYSTEM</p><h1>MIKAEL HQ</h1><p>Your private place to receive Lizzy's letters and play chess.</p><input id="hqKey" type="password" placeholder="HQ access key" autocomplete="off"><button id="loginBtn">Enter HQ</button><div id="loginStatus"></div></div></div>
-<div id="app" class="hidden"><aside><div class="brand">🖤 <b>MIKAEL HQ</b></div><nav><button data-view="letters" class="active">💌 Letters</button><button data-view="chess">♟️ Chess</button><button data-view="escape">🔐 Escape Room</button></nav><button id="logoutBtn">Lock HQ</button></aside><main><header><p class="eyebrow">PRIVATE COMMAND CENTRE</p><h2 id="viewTitle">Letters from Lizzy</h2></header>
+<div id="app" class="hidden"><aside><div class="brand">🖤 <b>MIKAEL HQ</b></div><nav><button data-view="letters" class="active">💌 Letters</button><button data-view="chess">♟️ Chess</button><button data-view="escape">🔐 Escape Room</button><button data-view="annoy">😈 Annoy Lizzy</button></nav><button id="logoutBtn">Lock HQ</button></aside><main><header><p class="eyebrow">PRIVATE COMMAND CENTRE</p><h2 id="viewTitle">Letters from Lizzy</h2></header>
 <section id="letters" class="view"><div class="section-intro"><div><span class="pill">TWO-WAY</span><h2>💌 Letters from Lizzy</h2><p>When Lizzy writes, her letter appears here. You can reply directly.</p></div><div class="intro-actions"><button class="primary" id="refreshLetters">↻ Refresh</button><button class="danger" id="clearLetters">🧹 Clear Everything</button></div></div><div id="lettersList"></div></section>
 <section id="chess" class="view hidden"><div class="section-intro"><div><span class="pill">2 PLAYER</span><h2>♟️ Mikael × Lizzy Chess</h2><p>You are Black. Lizzy is White.</p></div><div class="turn" id="chessTurn">Loading…</div></div><div class="chess-layout"><div class="card board-card"><div class="chess-board-wrap"><div id="chessBoard" class="board"></div></div><div class="board-actions"><button id="resetChess">New Game</button><button id="refreshChess">↻ Sync</button></div></div><div class="card"><h3>🎓 Teach Lizzy</h3><div id="helpRequests" class="help-requests empty">No requests.</div><textarea id="hintText" placeholder="Write an explanation or hint for Lizzy…"></textarea><button class="primary" id="sendHint">Send to Lizzy</button><hr><h3>📜 Move history</h3><div id="moveHistory" class="moves">—</div></div></div></section>
-<section id="escape" class="view hidden"><div class="section-intro"><div><span class="pill">LIVE</span><h2>🔐 Escape Room</h2><p>Watch her progress. This view never shows the codes — only whether she's solved each lock.</p></div><div class="intro-actions"><button class="primary" id="refreshEscape">↻ Refresh</button><button class="danger" id="resetEscape">🔄 Reset Progress</button></div></div>
-<div class="card"><div id="escapeStatusCard">Loading…</div></div>
-<div class="card"><h3>🏆 Trophies won</h3><div id="hqTrophyList" class="empty">No trophies yet.</div></div></section>
-</main></div><script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script><script src="chess-fallback.js"></script><script src="mikael-hq.js?v=20260913-1330"></script></body></html>
+
+<section id="escape" class="view hidden">
+  <div class="section-intro"><div><span class="pill">LOCKED IN AT EAST HIGH</span><h2>🔐 Escape Room Control</h2><p>Your private clue sheet. Read these to Lizzy out loud — don't let her see this screen.</p></div><div class="intro-actions"><button class="primary" id="escapeRefreshBtn">↻ Refresh</button><button class="danger" id="escapeResetBtn">🔄 Reset Room</button></div></div>
+
+  <div class="card">
+    <div id="escapeStatus" class="turn">Loading…</div>
+    <div id="escapeTimerHQ" style="font-size:22px;font-weight:800;margin-top:6px">—</div>
+    <div id="escapeAttempts" class="meta"></div>
+  </div>
+
+  <div class="card">
+    <h3>🔒 Lock 1 — Coach's Notes (Locker Room)</h3>
+    <p class="meta">Read all of this to Lizzy. She has the jerseys and props on her screen — you don't.</p>
+    <div class="letter-body">
+      <p>A note is pinned to the board: <i>"Reminder from the equipment manager — jersey numbers in this room are always read top-to-bottom, and the code only uses numbers under 30."</i> <b>(This note is wrong. Nothing else here confirms it.)</b></p>
+      <p>Eight names have been redacted from old team paperwork. Read these to Lizzy, in whatever order you like — she has the jerseys, but not all of these people wear one:</p>
+      <ol>
+        <li>Nearly skipped winter break basketball plans entirely for a callback with a girl met at a New Year's Eve party.</li>
+        <li>Best friend of the captain since childhood — always at his side, on the court and off.</li>
+        <li>Hid a very unlikely talent from the team: perfecting a caramel-topped custard dessert.</li>
+        <li>Nicknamed "Rocket Man" — sank the final shot the night the Wildcats and Knights met again senior year.</li>
+        <li>Split his time evenly between the basketball team and the scholastic decathlon team.</li>
+        <li>Ran the whole show from the sidelines that season, in the loudest possible outfits, and never once touched a basketball.</li>
+        <li>Owned the country club where the whole team got summer jobs, and never played a single game.</li>
+        <li>Yelled motivational plays from the bench in a whistle, but never suited up himself.</li>
+      </ol>
+      <p><b>P.S.</b> — once the two of you have your four real jersey digits lined up in order (smallest jersey number first), swap the 1st and 3rd digits before either of you types anything in.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>🔒 Lock 2 — Taped Note on the Gym Wall</h3>
+    <p class="meta">Read this after Lock 1 is solved. Lizzy has a setlist, some banners, and a close-up photo of the lock itself.</p>
+    <div class="letter-body">
+      <p>"Four songs got played tonight before everything went dark. Read these to Lizzy — she can find the setlist."</p>
+      <ol>
+        <li>The song that plays right after the big game, when the whole team celebrates together as one.</li>
+        <li>The solo Troy sings out on the golf course, wondering out loud if he should bet on where his heart's going.</li>
+        <li>The duet at the very end of the winter callback, when two people finally stop worrying what everyone else thinks.</li>
+        <li>The reunion song, sung on stage in front of everyone, when two people who'd drifted apart choose each other again.</li>
+      </ol>
+      <p>Small print at the bottom, half torn: <i>"...5th song might've been posted on the wrong wall. Ignore it if the numbers don't line up."</i></p>
+      <p>Also taped underneath, in different handwriting: <i>"Reminder: this lock reads highest number first."</i> <b>(Check what's actually engraved on the lock before trusting this.)</b></p>
+      <p class="meta">Reminder to yourself: the retired jersey banners Lizzy sees (#14, #8, #25, #41) are pure decoys carried over from Lock 1 — they mean nothing here.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>🆘 Hint Requests from Lizzy</h3>
+    <div id="escapeHintRequests" class="help-requests empty">No requests.</div>
+  </div>
+
+  <div class="card">
+    <h3>🏆 Trophy Status</h3>
+    <div id="escapeTrophyBox" class="empty">Not solved yet.</div>
+  </div>
+</section>
+
+<section id="annoy" class="view hidden">
+  <div class="section-intro"><div><span class="pill">USE RESPONSIBLY</span><h2>😈 Annoy Lizzy</h2><p>Fires on her device next time it polls (a few seconds). She has a real "STOP ANNOYING ME" button — if she's used it, this is locked out until the cooldown clears.</p></div><div class="intro-actions"><button class="primary" id="annoyRefreshBtn">↻ Refresh Status</button></div></div>
+
+  <div class="card">
+    <div id="annoyStatus" class="turn">Loading…</div>
+  </div>
+
+  <div class="card">
+    <h3>Pick an effect</h3>
+    <div id="annoyGrid" class="annoy-grid">
+      <button class="annoy-btn" data-effect="random">🎲 Random</button>
+      <button class="annoy-btn" data-effect="button_move">🖱️ Button That Moves</button>
+      <button class="annoy-btn" data-effect="infinite_loading">⏳ Infinite Loading</button>
+      <button class="annoy-btn" data-effect="keyboard_chaos">⌨️ Keyboard Chaos</button>
+      <button class="annoy-btn" data-effect="mikael_appears">🖤 Mikael Appears</button>
+      <button class="annoy-btn" data-effect="attitude_meter">📊 Attitude Meter</button>
+      <button class="annoy-btn" data-effect="upside_down">🙃 Upside Down</button>
+      <button class="annoy-btn" data-effect="screen_wobble">📳 Screen Wobble</button>
+      <button class="annoy-btn" data-effect="unskippable_ad">📺 Unskippable Ad</button>
+      <button class="annoy-btn" data-effect="did_you_know">💡 Did You Know?</button>
+      <button class="annoy-btn" data-effect="petty_tax">💸 Petty MB Tax</button>
+      <button class="annoy-btn" data-effect="airhorn">📯 Airhorn</button>
+      <button class="annoy-btn" data-effect="captcha_joke">🤖 CAPTCHA Joke</button>
+      <button class="annoy-btn" data-effect="eyes_follow">👀 Eyes Follow You</button>
+      <button class="annoy-btn" data-effect="balloon_pop">🎈 Balloon Pop</button>
+      <button class="annoy-btn" data-effect="fake_update">🔄 Fake Update</button>
+    </div>
+    <div id="annoyResult" class="meta" style="margin-top:10px"></div>
+  </div>
+</section>
+</main></div><script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script><script src="chess-fallback.js"></script><script src="mikael-hq.js?v=20260916-annoy-lizzy"></script></body></html>

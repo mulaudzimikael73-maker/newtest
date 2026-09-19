@@ -4429,115 +4429,6 @@ if (typeof lizzyTelegramNotify === "function") window.lizzyTelegramNotify = lizz
         ]
     };
 
-    const SYS_ALERTS = {
-        "Lizzy": [
-            "💗 SYSTEM WARNING: Softness levels are becoming difficult to regulate.",
-            "🌸 SYSTEM NOTICE: Lizzy has made the system 37% happier simply by existing.",
-            "🦋 EMOTIONAL ALERT: Butterflies detected. No immediate action required.",
-            "💕 SYSTEM WARNING: Someone is being exceptionally lovable today.",
-            "🥹 HEART STATUS: Full. Very full. Almost suspiciously full.",
-            "🌷 SYSTEM NOTICE: Another ordinary moment has somehow become a core memory.",
-            "💗 ERROR: System attempted to find something unlovable. Search returned zero results.",
-            "🫶 HEART ALERT: Hug requirements have increased unexpectedly.",
-            "🌸 SYSTEM WARNING: Flower Garden has entered dangerously wholesome territory.",
-            "💌 MESSAGE QUEUE: One unnecessary but very deserved compliment is waiting.",
-            "🥰 SYSTEM NOTICE: Smile detected. System performance has improved by 100%.",
-            "💕 EMOTIONAL UPDATE: Someone is probably thinking about you again.",
-            "🌷 SYSTEM WARNING: Today's cuteness levels may exceed recommended limits.",
-            "💗 SYSTEM ERROR: Too much wholesome energy. Rebooting with extra love.",
-            "🥹 FINAL NOTICE: Lizzy mode remains dangerously difficult to uninstall.",
-            "😏 SYSTEM NOTICE: Lizzy has once again been correct. Please stop counting.",
-            "💗 SYSTEM WARNING: Charm levels dangerously high. Mikael's defences are failing.",
-            "😂 ERROR: Attempted to find Lizzy's flaws. File not found.",
-            "💌 SYSTEM NOTICE: One (1) unnecessarily cute comment has been logged.",
-            "🥹 HEART ALERT: Someone is being adorable on purpose. Suspicious, but allowed.",
-            "😌 SYSTEM UPDATE: Lizzy has once again made being loved look effortless.",
-            "💗 FINAL NOTICE: Resistance to this much sweetness is not recommended."
-        ],
-        "Princess Four Eyes": [
-            "👓 PRINCESS ALERT: Your royal status has been confirmed. Again.",
-            "💗 SYSTEM WARNING: Four Eyes Mode has exceeded the maximum allowed sweetness.",
-            "👑 ROYAL NOTICE: Princess treatment protocols are currently active.",
-            "👓 SYSTEM ERROR: Glasses detected. Intelligence levels immediately increased.",
-            "💕 HEART ALERT: Princess Four Eyes has entered the soft zone.",
-            "😇 SYSTEM NOTICE: Angel behaviour detected. No investigation required.",
-            "👓 WARNING: Excessive adorableness occurring behind the glasses.",
-            "💗 SYSTEM UPDATE: Comfort levels increased because Princess Four Eyes is online.",
-            "👑 ROYAL SECURITY: Anyone upsetting the Princess will be investigated.",
-            "🥹 SYSTEM ERROR: Cannot calculate how cute someone can be while wearing glasses.",
-            "👓 NOTICE: Four eyes. Infinite attitude potential. Don't let the softness fool you.",
-            "💕 HEART STATUS: Princess has successfully occupied the entire emotional storage drive.",
-            "🌸 SYSTEM WARNING: Soft smile detected. Nearby systems may become emotional.",
-            "👑 PRINCESS PROTOCOL: All complaints must be submitted in triplicate and ignored.",
-            "👓 FINAL REPORT: Princess Four Eyes remains Mikael's favourite build. Allegedly."
-        ],
-        "Little Miss Attitude": [
-            "😏 SYSTEM WARNING: Attitude levels have reached completely unnecessary heights.",
-            "🙄 SYSTEM ERROR: Patience module has mysteriously disappeared.",
-            "💅 ATTITUDE ALERT: Sass levels currently exceed factory specifications.",
-            "🚨 WARNING: Mikael has said something. Unfortunately.",
-            "😏 SYSTEM NOTICE: One eyebrow has been raised. Situation considered serious.",
-            "💀 ERROR 403: Mikael's excuse has been denied by management.",
-            "🙄 SYSTEM WARNING: Eye-roll detected. Impact expected shortly.",
-            "💅 SYSTEM UPDATE: Standards remain unnecessarily high. Good.",
-            "😂 ERROR: Mikael attempted to be funny. System rejected submission.",
-            "🚨 ATTITUDE STATUS: Unbothered. Unimpressed. Beautiful.",
-            "😏 SYSTEM NOTICE: Confidence levels approaching Mikael's. Please intervene.",
-            "💀 WARNING: “Whatever.” has been detected. Conversation may now be over.",
-            "💅 SYSTEM ERROR: Apology insufficient. Please increase effort by 400%.",
-            "🙄 SECURITY ALERT: Receipts have been located. Mikael is in trouble.",
-            "😏 FINAL WARNING: Little Miss Attitude has entered the chat. Everyone behave."
-        ],
-        "Agent Yelizaveta": [
-            "🕵️ CLASSIFIED ALERT: Agent Yelizaveta has entered the system.",
-            "🚨 MISSION WARNING: Agent Mikhail has been detected in the vicinity.",
-            "🔐 SECURITY ALERT: Classified information is being dangerously close to becoming personal.",
-            "🕵️ FIELD REPORT: Subject appears calm. This is probably a deception.",
-            "🚨 MISSION UPDATE: Agent Mikhail's whereabouts remain suspiciously convenient.",
-            "🔎 INVESTIGATION NOTICE: Evidence suggests someone is hiding something.",
-            "🔐 CLEARANCE ERROR: Emotional information requires higher authorisation.",
-            "🕵️ SURVEILLANCE ALERT: Agent Mikhail has been observed being suspiciously charming.",
-            "🚨 MISSION STATUS: Objective unclear. Investigate everything anyway.",
-            "📁 CLASSIFIED NOTICE: One file has been redacted. Agent Yelizaveta knows why.",
-            "🔎 INTELLIGENCE UPDATE: Current evidence does not support Mikael's version of events.",
-            "🕵️ FIELD WARNING: Excessive eye contact with the suspect may compromise the investigation.",
-            "🔐 SECURITY ERROR: Agent Mikhail attempted to access classified feelings.",
-            "🚨 MISSION ALERT: The investigation into “the Mikael effect” continues.",
-            "🕵️ FINAL REPORT: Agent Yelizaveta remains undefeated. Agent Mikhail remains under investigation."
-        ]
-    };
-
-    // Mikael Takeover has its own dedicated pop-up pool. While the takeover is
-    // active, none of the four persona pools above are used — this list
-    // completely replaces them until the takeover is switched off.
-    const MIKAEL_TAKEOVER_ALERTS = [
-        "😎 MIKAEL TAKEOVER: LizzyOS has been temporarily upgraded. You're welcome.",
-        "🚨 SYSTEM ALERT: Mr Perfect has entered the system. Normal operations are suspended.",
-        "🕶️ SECURITY NOTICE: Mikael has successfully bypassed the LizzyOS security system. That was easier than expected.",
-        "😏 SYSTEM NOTICE: Mikael would like to remind everyone that he is, in fact, still handsome.",
-        "💀 SYSTEM ERROR: Lizzy attempted to remove Mikael. Unfortunately, he has admin privileges.",
-        "🏆 MIKAEL UPDATE: Confidence levels are functioning exactly as intended.",
-        "📡 BROADCAST: Attention Lizzy. Your favourite person has temporarily taken control.",
-        "🚨 WARNING: Mikael has discovered the admin panel. This may have been a terrible design decision.",
-        "😌 SYSTEM NOTICE: Mr Perfect is currently making executive decisions. Please remain calm.",
-        "💻 ADMIN ALERT: LizzyOS has been renamed MikaelOS until further notice.",
-        "😂 SYSTEM ERROR: Too much Mikael detected. System recommends absolutely no treatment.",
-        "🕵️ SECURITY REPORT: Mikael has accessed classified files. He claims they were “already basically his.”",
-        "😏 TAKEOVER NOTICE: Any complaints about this takeover should be directed to Mikael. He will ignore them.",
-        "💗 SYSTEM NOTICE: Mikael has entered the emotional department. Productivity has immediately decreased.",
-        "🚨 CRITICAL ALERT: Mr Perfect has begun adding himself to things he was never invited to.",
-        "🧠 SYSTEM UPDATE: Mikael has successfully convinced himself that every decision made during this takeover is correct.",
-        "🎤 PUBLIC ANNOUNCEMENT: Mikael would like the floor. Unfortunately, nobody gave him permission.",
-        "💀 SYSTEM WARNING: Mikael is unsupervised. Hide the important buttons.",
-        "🏴‍☠️ ADMIN TAKEOVER: This system now belongs to Mikael. Technically. Emotionally. Probably.",
-        "😌 SYSTEM NOTICE: Mikael has reviewed the situation and determined that Mikael was right.",
-        "📁 CLASSIFIED: A new folder called “Things Lizzy Won't Admit” has been created.",
-        "😂 SYSTEM ERROR: Mikael attempted to behave normally. Operation failed successfully.",
-        "💻 TAKEOVER STATUS: 87% complete. Lizzy's ability to stop him: 0%.",
-        "😎 FINAL WARNING: Mr Perfect is leaving the system exactly how he found it — better.",
-        "👑 MIKAEL TAKEOVER COMPLETE: The admin has spoken. You may now return to being adorable, Lizzy."
-    ];
-
     const PERSONA_PHOTOS = {
         "Lizzy": "assets/lizzy.png",
         "Princess Four Eyes": "assets/princess-four-eyes.png",
@@ -4796,32 +4687,14 @@ if (typeof lizzyTelegramNotify === "function") window.lizzyTelegramNotify = lizz
     }
     $("aboutLizzyReroll")?.addEventListener("click",()=>rollCompliment(persona()));
 
-    const takeoverActive = () => document.body.classList.contains("mikaelTakeoverActive");
-
     function showSystemAlert(kind){
-        if(takeoverActive()){
-            const pool = MIKAEL_TAKEOVER_ALERTS;
-            const message = pool[Math.floor(Math.random()*pool.length)];
-            const popup = document.createElement("div");
-            popup.className = "systemAlertPopup takeover";
-            popup.innerHTML = `<img class="systemAlertPhoto" src="mikael-takeover-batsignal.jpeg" alt=""><div class="systemAlertBody"><strong>😎 MIKAEL TAKEOVER</strong><p>${message}</p></div>`;
-            document.body.appendChild(popup);
-            setTimeout(()=>popup.classList.add("show"),50);
-            setTimeout(()=>{
-                popup.classList.remove("show");
-                setTimeout(()=>popup.remove(),500);
-            },6000);
-            return;
-        }
         const p = persona();
-        const KIND_POOLS = {error: SYS_ERRORS, warning: SYS_WARNINGS, notice: SYS_ALERTS};
-        const KIND_LABELS = {error: "❌ SYSTEM ERROR", warning: "⚠️ SYSTEM WARNING", notice: "📟 SYSTEM ALERT"};
-        const pool = (KIND_POOLS[kind] || SYS_WARNINGS)[p] || (KIND_POOLS[kind] || SYS_WARNINGS)["Little Miss Attitude"];
+        const pool = (kind==="error" ? SYS_ERRORS : SYS_WARNINGS)[p] || (kind==="error" ? SYS_ERRORS : SYS_WARNINGS)["Little Miss Attitude"];
         const message = pool[Math.floor(Math.random()*pool.length)];
         const photo = PERSONA_PHOTOS[p] || PERSONA_PHOTOS["Little Miss Attitude"];
         const popup = document.createElement("div");
         popup.className = "systemAlertPopup " + kind;
-        popup.innerHTML = `<img class="systemAlertPhoto" src="${photo}" alt=""><div class="systemAlertBody"><strong>${KIND_LABELS[kind] || KIND_LABELS.warning}</strong><p>${message}</p></div>`;
+        popup.innerHTML = `<img class="systemAlertPhoto" src="${photo}" alt=""><div class="systemAlertBody"><strong>${kind==="error"?"❌ SYSTEM ERROR":"⚠️ SYSTEM WARNING"}</strong><p>${message}</p></div>`;
         document.body.appendChild(popup);
         setTimeout(()=>popup.classList.add("show"),50);
         setTimeout(()=>{
@@ -4834,9 +4707,7 @@ if (typeof lizzyTelegramNotify === "function") window.lizzyTelegramNotify = lizz
         const desktop = $("desktopArea");
         if(!desktop || desktop.classList.contains("hidden")) return;
         if(Math.random() > 0.28) return;
-        if(takeoverActive()){ showSystemAlert(); return; }
-        const roll = Math.random();
-        showSystemAlert(roll < 0.34 ? "error" : roll < 0.67 ? "warning" : "notice");
+        showSystemAlert(Math.random() < 0.5 ? "error" : "warning");
     }
     window.addEventListener("load",()=>{
         window.LizzyPerf?.add?.("personalitySystemAlerts", 30000, maybeShowSystemAlert);
@@ -4984,4 +4855,331 @@ if (typeof lizzyTelegramNotify === "function") window.lizzyTelegramNotify = lizz
     }
 
     applyPersonality();
+})();
+
+// =====================================================
+// 😈 MIKAEL HQ REMOTE ANNOYANCE — delivery + effects
+// Polls the Worker for a pending annoyance and fires it locally.
+// The "STOP ANNOYING ME" button is real: it clears whatever's queued
+// and starts a genuine cooldown on the server, honoured by HQ too.
+// =====================================================
+(() => {
+"use strict";
+
+async function annoyApi(action, body) {
+  const url = LIZZY_TELEGRAM_WORKER_URL + "?action=" + encodeURIComponent(action);
+  if (!body) {
+    const r = await fetch(url);
+    return r.json();
+  }
+  const r = await fetch(LIZZY_TELEGRAM_WORKER_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=UTF-8" },
+    body: JSON.stringify({ action, ...body })
+  });
+  return r.json();
+}
+
+function ensureAnnoyStyles() {
+  if (document.getElementById("annoyStyles")) return;
+  const s = document.createElement("style");
+  s.id = "annoyStyles";
+  s.textContent = `
+    #stopAnnoyBtn{position:fixed;right:16px;bottom:16px;z-index:999990;background:#ff5c5c;color:#fff;
+      border:none;border-radius:999px;padding:10px 16px;font-weight:800;font-size:12px;cursor:pointer;
+      box-shadow:0 8px 24px rgba(0,0,0,.35);opacity:.55;transition:opacity .2s,transform .2s}
+    #stopAnnoyBtn:hover{opacity:1;transform:scale(1.05)}
+    .annoyOverlay{position:fixed;inset:0;z-index:999980;display:flex;align-items:center;justify-content:center;
+      background:rgba(10,5,20,.65);backdrop-filter:blur(3px);animation:annoyFadeIn .25s ease}
+    @keyframes annoyFadeIn{from{opacity:0}to{opacity:1}}
+    .annoyCard{background:linear-gradient(150deg,#2a1f3d,#1c1530);color:#fff;padding:26px 24px;border-radius:20px;
+      max-width:340px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.15)}
+    .annoyCard h3{margin:0 0 10px;font-size:16px}
+    .annoyCard p{margin:0 0 14px;font-size:13px;line-height:1.5;opacity:.9}
+    .annoyCard button{background:#e6785a;border:none;color:#1a0f0a;font-weight:800;padding:9px 18px;border-radius:12px;cursor:pointer}
+    .annoyToast{position:fixed;left:50%;top:24px;transform:translateX(-50%);z-index:999995;background:#221e3a;
+      color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;font-weight:700;box-shadow:0 10px 30px rgba(0,0,0,.4);
+      animation:annoyToastIn .3s ease}
+    @keyframes annoyToastIn{from{opacity:0;transform:translate(-50%,-10px)}to{opacity:1;transform:translate(-50%,0)}}
+    @keyframes annoyWobble{0%,100%{transform:rotate(0)}25%{transform:rotate(1.2deg)}75%{transform:rotate(-1.2deg)}}
+    .annoyEyes{position:fixed;right:20px;top:20px;z-index:999985;display:flex;gap:8px}
+    .annoyEye{width:34px;height:34px;background:#fff;border-radius:50%;position:relative;box-shadow:0 4px 10px rgba(0,0,0,.3)}
+    .annoyPupil{width:12px;height:12px;background:#222;border-radius:50%;position:absolute;top:11px;left:11px}
+    .annoyBalloon{position:absolute;font-size:40px;cursor:pointer;user-select:none;transition:transform .15s}
+  `;
+  document.head.appendChild(s);
+}
+
+function annoyToast(msg, ms) {
+  ensureAnnoyStyles();
+  const t = document.createElement("div");
+  t.className = "annoyToast";
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), ms || 3000);
+}
+
+function annoyOverlay(title, body, btnLabel, onClose) {
+  ensureAnnoyStyles();
+  const wrap = document.createElement("div");
+  wrap.className = "annoyOverlay";
+  wrap.innerHTML = `<div class="annoyCard"><h3>${title}</h3><p>${body}</p><button>${btnLabel || "Okay 🙄"}</button></div>`;
+  wrap.querySelector("button").onclick = () => { wrap.remove(); if (onClose) onClose(); };
+  document.body.appendChild(wrap);
+  return wrap;
+}
+
+// ---- 15 effects ----
+const ANNOY_EFFECTS = {
+  button_move() {
+    ensureAnnoyStyles();
+    const b = document.createElement("button");
+    b.textContent = "Close This 🙄";
+    b.style.cssText = "position:fixed;left:50%;top:50%;z-index:999990;padding:12px 20px;border-radius:12px;border:none;background:#e6785a;color:#1a0f0a;font-weight:800;cursor:pointer;transition:transform .12s";
+    document.body.appendChild(b);
+    const dodge = () => {
+      const x = 40 + Math.random() * (window.innerWidth - 200);
+      const y = 40 + Math.random() * (window.innerHeight - 100);
+      b.style.left = x + "px"; b.style.top = y + "px"; b.style.transform = "none";
+    };
+    dodge();
+    b.addEventListener("mouseenter", dodge);
+    let clicks = 0;
+    b.onclick = () => { clicks++; if (clicks > 4) { b.remove(); annoyToast("Fine, you win. 😤", 2000); } else dodge(); };
+    setTimeout(() => b.remove(), 8000);
+  },
+  infinite_loading() {
+    const w = annoyOverlay("⏳ Loading Lizzy's patience…", "3%", "");
+    const p = w.querySelector("p");
+    const w2 = w.querySelector("button"); w2.style.display = "none";
+    const vals = [3, 3, 4, 4, 4, 6, 6, 9, 9, 11, 11, 11];
+    let i = 0;
+    const iv = setInterval(() => { p.textContent = (vals[i % vals.length]) + "%"; i++; }, 500);
+    setTimeout(() => { clearInterval(iv); w.remove(); annoyToast("Patience fully loaded. Kidding, reload not required. 😌", 2500); }, 6000);
+  },
+  keyboard_chaos() {
+    const buttons = Array.from(document.querySelectorAll("button")).slice(0, 12);
+    const swap = ["NOPE.", "Try Again", "Nice Try", "Not Today", "Guess Again"];
+    const original = buttons.map(b => b.textContent);
+    buttons.forEach((b, idx) => { if (b.textContent.trim()) b.textContent = swap[idx % swap.length]; });
+    annoyToast("😈 button chaos activated", 1800);
+    setTimeout(() => buttons.forEach((b, idx) => { b.textContent = original[idx]; }), 7000);
+  },
+  mikael_appears() {
+    const lines = [
+      "Did you miss me? 😌", "Thinking about you. Mostly about snacks too, but mostly you.",
+      "Just checking you're still there. 👀", "10/10, would annoy again.",
+      "This is your official reminder that I exist."
+    ];
+    annoyOverlay("🖤 Mikael Appears", lines[Math.floor(Math.random() * lines.length)], "Okay 🙄");
+  },
+  attitude_meter() {
+    const w = annoyOverlay("📊 Attitude Meter", `<span id="attMeterText">Lizzy Attitude: 0%</span><br><div style="height:10px;background:#ffffff22;border-radius:8px;margin-top:8px;overflow:hidden"><div id="attMeterBar" style="height:100%;width:0%;background:#e6785a;transition:width .3s"></div></div>`, "");
+    w.querySelector("button").style.display = "none";
+    let pct = 0;
+    const iv = setInterval(() => {
+      pct = Math.min(100, pct + Math.floor(Math.random() * 20) + 5);
+      w.querySelector("#attMeterBar").style.width = pct + "%";
+      w.querySelector("#attMeterText").textContent = "Lizzy Attitude: " + pct + "%";
+      if (pct >= 100) clearInterval(iv);
+    }, 300);
+    setTimeout(() => w.remove(), 4500);
+  },
+  upside_down() {
+    document.body.style.transition = "transform .6s ease";
+    document.body.style.transform = "rotate(180deg)";
+    setTimeout(() => {
+      document.body.style.transform = "rotate(0deg)";
+      annoyToast("made you look 🙃", 2200);
+    }, 1800);
+  },
+  screen_wobble() {
+    document.body.style.animation = "annoyWobble .18s ease 6";
+    setTimeout(() => { document.body.style.animation = ""; }, 1200);
+  },
+  unskippable_ad() {
+    ensureAnnoyStyles();
+    const compliments = [
+      "you have great taste in apps you didn't ask for",
+      "your patience is legendary",
+      "you're doing amazing, actually",
+      "you make questionable decisions look effortless",
+      "your hair looks good today. Statistically likely",
+      "you're the main character and everyone else is just background noise",
+      "your reaction to this ad has been rated 10/10 by unseen judges",
+      "you have impeccable timing for absolutely nothing",
+      "you're clearly built different, in a good way",
+      "you deserve a snack right now. This message is legally binding"
+    ];
+    const line = compliments[Math.floor(Math.random() * compliments.length)];
+    const w = document.createElement("div");
+    w.className = "annoyOverlay";
+    w.innerHTML = `<div class="annoyCard"><h3>📺 A Message From Mikael</h3><p id="adCountdown">This message cannot be skipped in 5...</p></div>`;
+    document.body.appendChild(w);
+    let n = 5;
+    const iv = setInterval(() => {
+      n--;
+      if (n > 0) w.querySelector("#adCountdown").textContent = "This message cannot be skipped in " + n + "...";
+      else {
+        clearInterval(iv);
+        w.querySelector(".annoyCard").innerHTML = `<h3>📺 A Message From Mikael</h3><p>${line}.</p><button>Close</button>`;
+        w.querySelector("button").onclick = () => w.remove();
+      }
+    }, 1000);
+  },
+  did_you_know() {
+    const facts = [
+      "Did you know? Honey never spoils. Neither does Mikael's crush on you.",
+      "Did you know? A group of flamingos is called a flamboyance. A group of Mikael's excuses is called a lot.",
+      "Did you know? Bananas are berries. This has nothing to do with anything.",
+      "Did you know? Octopuses have three hearts. Mikael has one, and it's currently very invested in whether there's food in the fridge.",
+      "Did you know? Sharks existed before trees. Mikael's crush on you feels almost as old.",
+      "Did you know? A shrimp's heart is located in its head. Mikael's heart, meanwhile, remains a mystery even to him.",
+      "Did you know? Wombats produce cube-shaped poop. Completely useless fact, but so is skipping this popup.",
+      "Did you know? Cows form best friendships and get stressed when separated. Relatable, according to Mikael.",
+      "Did you know? It's physically impossible to hum while holding your nose. You just tried it, didn't you.",
+      "Did you know? A group of pandas is called an embarrassment. A group of Lizzy's pillows is called a hazard."
+    ];
+    annoyOverlay("💡 Did You Know?", facts[Math.floor(Math.random() * facts.length)], "Fascinating.");
+  },
+  petty_tax() {
+    const reasons = ["for taking too long to text back", "for existing so likeably", "just because", "for winning the last argument"];
+    const reason = reasons[Math.floor(Math.random() * reasons.length)];
+    try {
+      const bal = Math.max(0, Number(localStorage.getItem("lizzyMickyBucsV1") || 0) - 1);
+      localStorage.setItem("lizzyMickyBucsV1", String(bal));
+    } catch (e) {}
+    annoyToast("💸 Petty Tax: -1 MB (" + reason + ")", 3000);
+  },
+  airhorn() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = "sawtooth"; o.frequency.value = 340;
+      o.connect(g); g.connect(ctx.destination);
+      g.gain.setValueAtTime(0.15, ctx.currentTime);
+      o.start();
+      o.frequency.exponentialRampToValueAtTime(220, ctx.currentTime + 0.6);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.7);
+      o.stop(ctx.currentTime + 0.7);
+    } catch (e) {}
+    annoyToast("📯 HONK", 1500);
+  },
+  captcha_joke() {
+    const prompts = [
+      { text: "Prove you're not a stalker. Select all images of Mikael being right.", btn: "I am not a stalker" },
+      { text: "Verify you're human. Select all images of Mikael's questionable fashion choices.", btn: "Verified ✅" },
+      { text: "Security check: select all images where Mikael is definitely not stalking anyone. (He's Batman. It's different.)", btn: "Understood" },
+      { text: "Confirm you're not a robot. Select all images of Mikael pretending he wasn't just staring at his phone.", btn: "I confirm" },
+      { text: "Prove you're paying attention. Select all images of Mikael being 'busy' when it's actually just snack time.", btn: "Fair enough" },
+      { text: "Prove you're not a robot. Select all images of Lizzy pretending she's not tired.", btn: "I plead the fifth" },
+      { text: "Verify you're human. Select all images of Lizzy defending Cody for absolutely no reason.", btn: "No comment" },
+      { text: "Security check: select all images of Lizzy claiming she can see fine without her glasses.", btn: "I can see fine" },
+      { text: "Confirm you're not a bot. Select all images of Lizzy taking way too long to reply to a text.", btn: "It was one time" },
+      { text: "Prove you're human. Select all images of Lizzy's pillow collection that has clearly become a hazard.", btn: "They're all essential" }
+    ];
+    const p = prompts[Math.floor(Math.random() * prompts.length)];
+    annoyOverlay("🤖 Quick Verification", p.text + "<br><br>🖼️🖼️🖼️🖼️", p.btn);
+  },
+  eyes_follow() {
+    ensureAnnoyStyles();
+    const wrap = document.createElement("div");
+    wrap.className = "annoyEyes";
+    wrap.innerHTML = `<div class="annoyEye"><div class="annoyPupil"></div></div><div class="annoyEye"><div class="annoyPupil"></div></div>`;
+    document.body.appendChild(wrap);
+    const move = (e) => {
+      wrap.querySelectorAll(".annoyPupil").forEach(p => {
+        const rect = p.parentElement.getBoundingClientRect();
+        const dx = (e.clientX - (rect.left + rect.width / 2)) / 40;
+        const dy = (e.clientY - (rect.top + rect.height / 2)) / 40;
+        p.style.transform = `translate(${Math.max(-6, Math.min(6, dx))}px, ${Math.max(-6, Math.min(6, dy))}px)`;
+      });
+    };
+    document.addEventListener("mousemove", move);
+    setTimeout(() => { document.removeEventListener("mousemove", move); wrap.remove(); }, 9000);
+  },
+  balloon_pop() {
+    ensureAnnoyStyles();
+    const overlay = document.createElement("div");
+    overlay.className = "annoyOverlay";
+    overlay.style.background = "rgba(10,5,20,.35)";
+    overlay.innerHTML = `<div style="position:absolute;top:16px;left:50%;transform:translateX(-50%);color:#fff;font-weight:800;background:#221e3a;padding:8px 16px;border-radius:999px">Pop them all to continue 🎈</div>`;
+    const colors = ["🎈", "🎈", "🎈", "🎈"];
+    const messages = ["Hi 👋", "You're doing great", "Almost done", "Last one! 😤"];
+    let remaining = 6;
+    for (let i = 0; i < remaining; i++) {
+      const b = document.createElement("div");
+      b.className = "annoyBalloon";
+      b.textContent = colors[0];
+      b.style.left = (10 + Math.random() * 80) + "%";
+      b.style.top = (20 + Math.random() * 60) + "%";
+      const hasMsg = i === remaining - 1;
+      b.onclick = () => {
+        b.style.transform = "scale(2)"; b.style.opacity = "0";
+        if (hasMsg) annoyToast("🎈 " + messages[messages.length - 1], 2500);
+        setTimeout(() => b.remove(), 150);
+        remaining--;
+        if (remaining <= 0) overlay.remove();
+      };
+      overlay.appendChild(b);
+    }
+    document.body.appendChild(overlay);
+  },
+  fake_update() {
+    ensureAnnoyStyles();
+    const w = document.createElement("div");
+    w.className = "annoyOverlay";
+    w.innerHTML = `<div class="annoyCard"><h3>🔄 LizzyOS Update</h3><p>Installing a critical update…</p><div style="height:10px;background:#ffffff22;border-radius:8px;overflow:hidden;margin-top:6px"><div id="updBar" style="height:100%;width:0%;background:#e6785a;transition:width .4s"></div></div></div>`;
+    document.body.appendChild(w);
+    let pct = 0;
+    const iv = setInterval(() => {
+      pct = Math.min(100, pct + Math.floor(Math.random() * 15) + 3);
+      w.querySelector("#updBar").style.width = pct + "%";
+      if (pct >= 100) {
+        clearInterval(iv);
+        w.querySelector(".annoyCard").innerHTML = `<h3>🔄 LizzyOS Update</h3><p>Update complete. You're stuck with Mikael forever now. 😌</p><button>Okay</button>`;
+        w.querySelector("button").onclick = () => w.remove();
+      }
+    }, 400);
+  }
+};
+
+// ---- delivery loop ----
+let lastFiredAt = null;
+async function checkAnnoy() {
+  try {
+    const d = await annoyApi("annoy_state");
+    if (d.pending && d.pending.createdAt !== lastFiredAt && ANNOY_EFFECTS[d.pending.effect]) {
+      lastFiredAt = d.pending.createdAt;
+      ANNOY_EFFECTS[d.pending.effect]();
+      annoyApi("annoy_consume", { effect: d.pending.effect }).catch(() => {});
+    }
+  } catch (e) {}
+}
+
+// ---- the real stop button ----
+function injectStopButton() {
+  ensureAnnoyStyles();
+  if (document.getElementById("stopAnnoyBtn")) return;
+  const btn = document.createElement("button");
+  btn.id = "stopAnnoyBtn";
+  btn.textContent = "🛑 STOP ANNOYING ME";
+  btn.onclick = async () => {
+    btn.disabled = true;
+    try {
+      const d = await annoyApi("annoy_stop", {});
+      annoyToast("Okay okay, taking a break 😅", 2500);
+    } catch (e) {
+      annoyToast("Couldn't reach the server, try again.", 2500);
+    }
+    btn.disabled = false;
+  };
+  document.body.appendChild(btn);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  injectStopButton();
+  checkAnnoy();
+  setInterval(checkAnnoy, 6000);
+});
 })();
