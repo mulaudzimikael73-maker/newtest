@@ -186,6 +186,8 @@
   .label-good { color: oklch(0.55 0.18 350); }
   .label-nonsense { color: oklch(0.45 0.08 200); }
   .label-romance { color: oklch(0.55 0.18 350); }
+  .label-sports { color: oklch(0.5 0.15 40); }
+  .label-chocolate { color: oklch(0.38 0.09 45); }
 }
 
 @keyframes ticker-scroll {

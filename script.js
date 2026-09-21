@@ -1022,6 +1022,54 @@ openWhenLetters.laugh = {
     `
 };
 
+openWhenLetters.butterflies = {
+    title: "🦋 Open When You Need Butterflies",
+    body: `
+        <p>💌 A LITTLE LETTER FOR LIZZY</p>
+        <p>Dear Lizzy,</p>
+        <p>I was thinking about our date a few weeks ago, and honestly, I still think it was pretty amazing. 🥹❤️</p>
+        <p>There's something about spending time with you that just feels different. Even when we're being ridiculous, arguing about something completely unnecessary, or you're busy proving that you're definitely not bossy while telling me exactly what I should be doing… I genuinely enjoy it.</p>
+        <p>And yes, before you say anything — you are <strong>NOT</strong> allowed to use this letter against me forever. 😭</p>
+        <p>You may bring it up occasionally.</p>
+        <p>Maybe once in a while.</p>
+        <p>Possibly when you're trying to prove that I secretly like you a lot.</p>
+        <p>But if you start bringing this letter up every single time we disagree, I will be forced to deny everything and claim this document was fabricated by foreign intelligence agencies. 🇷🇺</p>
+        <p>But seriously, I really am looking forward to seeing you again.</p>
+        <p>I think that's one of the things I like most about you. There's always this little feeling of "I wonder what we're going to get up to next" whenever I think about seeing you. And sometimes, which is slightly embarrassing to admit, I'll just see your name pop up or think about you randomly and Mikael gets this weird little funky feeling inside. 😭❤️</p>
+        <p>I don't even know how to properly explain it.</p>
+        <p>It's like my brain goes:</p>
+        <p><strong>"Oh, Lizzy."</strong></p>
+        <p>And suddenly everything feels a little lighter and a little more exciting.</p>
+        <p>Very suspicious behaviour from my internal organs, if you ask me.</p>
+        <p>And honestly, if I ever became your annoying man, I already know exactly what kind of nonsense I'd get myself into.</p>
+        <p>I'd probably be the idiot walking around with you, buying you a lollipop from Abo My Friend because apparently that's what you've decided you need. 🍭😂</p>
+        <p>I'd probably also willingly risk getting yelled at by someone's mother because I'm walking around with her daughter, trying to shela her like I have absolutely no survival instincts.</p>
+        <p>I'd be standing there like:</p>
+        <p><strong>"Ma'am, I can explain."</strong></p>
+        <p>While simultaneously having absolutely no explanation.</p>
+        <p>And somehow I'd still be there the next day.</p>
+        <p>Because that's the thing.</p>
+        <p>You might be a weird soul.</p>
+        <p>You might be bossy while insisting you're not bossy.</p>
+        <p>You might declare that you hate men while staying up late talking to one.</p>
+        <p>You might demand a bowling rematch because apparently losing once wasn't enough.</p>
+        <p>And you might continue pretending that the Mikael Effect doesn't exist.</p>
+        <p>But you're also someone who makes me smile.</p>
+        <p>Someone I genuinely enjoy talking to.</p>
+        <p>Someone who can make an ordinary moment feel special.</p>
+        <p>And someone I'm very happy I got to spend that date with.</p>
+        <p>So yes, Lizzy...</p>
+        <p>I am definitely looking forward to seeing you again.</p>
+        <p>And perhaps, if you're lucky, there might even be a lollipop involved. 🍭</p>
+        <p>Just remember:</p>
+        <p>You can use this letter against me.</p>
+        <p>But only occasionally.</p>
+        <p>I have a reputation to protect. 😭</p>
+        <p class="letterSignature">Mr Perfect<br>a.k.a Your Standard<br>Mikael ❤️</p>
+        <p><strong>P.S.</strong> Please don't start crying after reading this. We already have enough evidence that you're emotionally dangerous. 😭😂</p>
+    `
+};
+
 
 
 function showOpenWhenLetter(letterKey) {
@@ -4429,6 +4477,115 @@ if (typeof lizzyTelegramNotify === "function") window.lizzyTelegramNotify = lizz
         ]
     };
 
+    const SYS_ALERTS = {
+        "Lizzy": [
+            "💗 SYSTEM WARNING: Softness levels are becoming difficult to regulate.",
+            "🌸 SYSTEM NOTICE: Lizzy has made the system 37% happier simply by existing.",
+            "🦋 EMOTIONAL ALERT: Butterflies detected. No immediate action required.",
+            "💕 SYSTEM WARNING: Someone is being exceptionally lovable today.",
+            "🥹 HEART STATUS: Full. Very full. Almost suspiciously full.",
+            "🌷 SYSTEM NOTICE: Another ordinary moment has somehow become a core memory.",
+            "💗 ERROR: System attempted to find something unlovable. Search returned zero results.",
+            "🫶 HEART ALERT: Hug requirements have increased unexpectedly.",
+            "🌸 SYSTEM WARNING: Flower Garden has entered dangerously wholesome territory.",
+            "💌 MESSAGE QUEUE: One unnecessary but very deserved compliment is waiting.",
+            "🥰 SYSTEM NOTICE: Smile detected. System performance has improved by 100%.",
+            "💕 EMOTIONAL UPDATE: Someone is probably thinking about you again.",
+            "🌷 SYSTEM WARNING: Today's cuteness levels may exceed recommended limits.",
+            "💗 SYSTEM ERROR: Too much wholesome energy. Rebooting with extra love.",
+            "🥹 FINAL NOTICE: Lizzy mode remains dangerously difficult to uninstall.",
+            "😏 SYSTEM NOTICE: Lizzy has once again been correct. Please stop counting.",
+            "💗 SYSTEM WARNING: Charm levels dangerously high. Mikael's defences are failing.",
+            "😂 ERROR: Attempted to find Lizzy's flaws. File not found.",
+            "💌 SYSTEM NOTICE: One (1) unnecessarily cute comment has been logged.",
+            "🥹 HEART ALERT: Someone is being adorable on purpose. Suspicious, but allowed.",
+            "😌 SYSTEM UPDATE: Lizzy has once again made being loved look effortless.",
+            "💗 FINAL NOTICE: Resistance to this much sweetness is not recommended."
+        ],
+        "Princess Four Eyes": [
+            "👓 PRINCESS ALERT: Your royal status has been confirmed. Again.",
+            "💗 SYSTEM WARNING: Four Eyes Mode has exceeded the maximum allowed sweetness.",
+            "👑 ROYAL NOTICE: Princess treatment protocols are currently active.",
+            "👓 SYSTEM ERROR: Glasses detected. Intelligence levels immediately increased.",
+            "💕 HEART ALERT: Princess Four Eyes has entered the soft zone.",
+            "😇 SYSTEM NOTICE: Angel behaviour detected. No investigation required.",
+            "👓 WARNING: Excessive adorableness occurring behind the glasses.",
+            "💗 SYSTEM UPDATE: Comfort levels increased because Princess Four Eyes is online.",
+            "👑 ROYAL SECURITY: Anyone upsetting the Princess will be investigated.",
+            "🥹 SYSTEM ERROR: Cannot calculate how cute someone can be while wearing glasses.",
+            "👓 NOTICE: Four eyes. Infinite attitude potential. Don't let the softness fool you.",
+            "💕 HEART STATUS: Princess has successfully occupied the entire emotional storage drive.",
+            "🌸 SYSTEM WARNING: Soft smile detected. Nearby systems may become emotional.",
+            "👑 PRINCESS PROTOCOL: All complaints must be submitted in triplicate and ignored.",
+            "👓 FINAL REPORT: Princess Four Eyes remains Mikael's favourite build. Allegedly."
+        ],
+        "Little Miss Attitude": [
+            "😏 SYSTEM WARNING: Attitude levels have reached completely unnecessary heights.",
+            "🙄 SYSTEM ERROR: Patience module has mysteriously disappeared.",
+            "💅 ATTITUDE ALERT: Sass levels currently exceed factory specifications.",
+            "🚨 WARNING: Mikael has said something. Unfortunately.",
+            "😏 SYSTEM NOTICE: One eyebrow has been raised. Situation considered serious.",
+            "💀 ERROR 403: Mikael's excuse has been denied by management.",
+            "🙄 SYSTEM WARNING: Eye-roll detected. Impact expected shortly.",
+            "💅 SYSTEM UPDATE: Standards remain unnecessarily high. Good.",
+            "😂 ERROR: Mikael attempted to be funny. System rejected submission.",
+            "🚨 ATTITUDE STATUS: Unbothered. Unimpressed. Beautiful.",
+            "😏 SYSTEM NOTICE: Confidence levels approaching Mikael's. Please intervene.",
+            "💀 WARNING: “Whatever.” has been detected. Conversation may now be over.",
+            "💅 SYSTEM ERROR: Apology insufficient. Please increase effort by 400%.",
+            "🙄 SECURITY ALERT: Receipts have been located. Mikael is in trouble.",
+            "😏 FINAL WARNING: Little Miss Attitude has entered the chat. Everyone behave."
+        ],
+        "Agent Yelizaveta": [
+            "🕵️ CLASSIFIED ALERT: Agent Yelizaveta has entered the system.",
+            "🚨 MISSION WARNING: Agent Mikhail has been detected in the vicinity.",
+            "🔐 SECURITY ALERT: Classified information is being dangerously close to becoming personal.",
+            "🕵️ FIELD REPORT: Subject appears calm. This is probably a deception.",
+            "🚨 MISSION UPDATE: Agent Mikhail's whereabouts remain suspiciously convenient.",
+            "🔎 INVESTIGATION NOTICE: Evidence suggests someone is hiding something.",
+            "🔐 CLEARANCE ERROR: Emotional information requires higher authorisation.",
+            "🕵️ SURVEILLANCE ALERT: Agent Mikhail has been observed being suspiciously charming.",
+            "🚨 MISSION STATUS: Objective unclear. Investigate everything anyway.",
+            "📁 CLASSIFIED NOTICE: One file has been redacted. Agent Yelizaveta knows why.",
+            "🔎 INTELLIGENCE UPDATE: Current evidence does not support Mikael's version of events.",
+            "🕵️ FIELD WARNING: Excessive eye contact with the suspect may compromise the investigation.",
+            "🔐 SECURITY ERROR: Agent Mikhail attempted to access classified feelings.",
+            "🚨 MISSION ALERT: The investigation into “the Mikael effect” continues.",
+            "🕵️ FINAL REPORT: Agent Yelizaveta remains undefeated. Agent Mikhail remains under investigation."
+        ]
+    };
+
+    // Mikael Takeover has its own dedicated pop-up pool. While the takeover is
+    // active, none of the four persona pools above are used — this list
+    // completely replaces them until the takeover is switched off.
+    const MIKAEL_TAKEOVER_ALERTS = [
+        "😎 MIKAEL TAKEOVER: LizzyOS has been temporarily upgraded. You're welcome.",
+        "🚨 SYSTEM ALERT: Mr Perfect has entered the system. Normal operations are suspended.",
+        "🕶️ SECURITY NOTICE: Mikael has successfully bypassed the LizzyOS security system. That was easier than expected.",
+        "😏 SYSTEM NOTICE: Mikael would like to remind everyone that he is, in fact, still handsome.",
+        "💀 SYSTEM ERROR: Lizzy attempted to remove Mikael. Unfortunately, he has admin privileges.",
+        "🏆 MIKAEL UPDATE: Confidence levels are functioning exactly as intended.",
+        "📡 BROADCAST: Attention Lizzy. Your favourite person has temporarily taken control.",
+        "🚨 WARNING: Mikael has discovered the admin panel. This may have been a terrible design decision.",
+        "😌 SYSTEM NOTICE: Mr Perfect is currently making executive decisions. Please remain calm.",
+        "💻 ADMIN ALERT: LizzyOS has been renamed MikaelOS until further notice.",
+        "😂 SYSTEM ERROR: Too much Mikael detected. System recommends absolutely no treatment.",
+        "🕵️ SECURITY REPORT: Mikael has accessed classified files. He claims they were “already basically his.”",
+        "😏 TAKEOVER NOTICE: Any complaints about this takeover should be directed to Mikael. He will ignore them.",
+        "💗 SYSTEM NOTICE: Mikael has entered the emotional department. Productivity has immediately decreased.",
+        "🚨 CRITICAL ALERT: Mr Perfect has begun adding himself to things he was never invited to.",
+        "🧠 SYSTEM UPDATE: Mikael has successfully convinced himself that every decision made during this takeover is correct.",
+        "🎤 PUBLIC ANNOUNCEMENT: Mikael would like the floor. Unfortunately, nobody gave him permission.",
+        "💀 SYSTEM WARNING: Mikael is unsupervised. Hide the important buttons.",
+        "🏴‍☠️ ADMIN TAKEOVER: This system now belongs to Mikael. Technically. Emotionally. Probably.",
+        "😌 SYSTEM NOTICE: Mikael has reviewed the situation and determined that Mikael was right.",
+        "📁 CLASSIFIED: A new folder called “Things Lizzy Won't Admit” has been created.",
+        "😂 SYSTEM ERROR: Mikael attempted to behave normally. Operation failed successfully.",
+        "💻 TAKEOVER STATUS: 87% complete. Lizzy's ability to stop him: 0%.",
+        "😎 FINAL WARNING: Mr Perfect is leaving the system exactly how he found it — better.",
+        "👑 MIKAEL TAKEOVER COMPLETE: The admin has spoken. You may now return to being adorable, Lizzy."
+    ];
+
     const PERSONA_PHOTOS = {
         "Lizzy": "assets/lizzy.png",
         "Princess Four Eyes": "assets/princess-four-eyes.png",
@@ -4687,14 +4844,32 @@ if (typeof lizzyTelegramNotify === "function") window.lizzyTelegramNotify = lizz
     }
     $("aboutLizzyReroll")?.addEventListener("click",()=>rollCompliment(persona()));
 
+    const takeoverActive = () => document.body.classList.contains("mikaelTakeoverActive");
+
     function showSystemAlert(kind){
+        if(takeoverActive()){
+            const pool = MIKAEL_TAKEOVER_ALERTS;
+            const message = pool[Math.floor(Math.random()*pool.length)];
+            const popup = document.createElement("div");
+            popup.className = "systemAlertPopup takeover";
+            popup.innerHTML = `<img class="systemAlertPhoto" src="mikael-takeover-batsignal.jpeg" alt=""><div class="systemAlertBody"><strong>😎 MIKAEL TAKEOVER</strong><p>${message}</p></div>`;
+            document.body.appendChild(popup);
+            setTimeout(()=>popup.classList.add("show"),50);
+            setTimeout(()=>{
+                popup.classList.remove("show");
+                setTimeout(()=>popup.remove(),500);
+            },6000);
+            return;
+        }
         const p = persona();
-        const pool = (kind==="error" ? SYS_ERRORS : SYS_WARNINGS)[p] || (kind==="error" ? SYS_ERRORS : SYS_WARNINGS)["Little Miss Attitude"];
+        const KIND_POOLS = {error: SYS_ERRORS, warning: SYS_WARNINGS, notice: SYS_ALERTS};
+        const KIND_LABELS = {error: "❌ SYSTEM ERROR", warning: "⚠️ SYSTEM WARNING", notice: "📟 SYSTEM ALERT"};
+        const pool = (KIND_POOLS[kind] || SYS_WARNINGS)[p] || (KIND_POOLS[kind] || SYS_WARNINGS)["Little Miss Attitude"];
         const message = pool[Math.floor(Math.random()*pool.length)];
         const photo = PERSONA_PHOTOS[p] || PERSONA_PHOTOS["Little Miss Attitude"];
         const popup = document.createElement("div");
         popup.className = "systemAlertPopup " + kind;
-        popup.innerHTML = `<img class="systemAlertPhoto" src="${photo}" alt=""><div class="systemAlertBody"><strong>${kind==="error"?"❌ SYSTEM ERROR":"⚠️ SYSTEM WARNING"}</strong><p>${message}</p></div>`;
+        popup.innerHTML = `<img class="systemAlertPhoto" src="${photo}" alt=""><div class="systemAlertBody"><strong>${KIND_LABELS[kind] || KIND_LABELS.warning}</strong><p>${message}</p></div>`;
         document.body.appendChild(popup);
         setTimeout(()=>popup.classList.add("show"),50);
         setTimeout(()=>{
@@ -4707,7 +4882,9 @@ if (typeof lizzyTelegramNotify === "function") window.lizzyTelegramNotify = lizz
         const desktop = $("desktopArea");
         if(!desktop || desktop.classList.contains("hidden")) return;
         if(Math.random() > 0.28) return;
-        showSystemAlert(Math.random() < 0.5 ? "error" : "warning");
+        if(takeoverActive()){ showSystemAlert(); return; }
+        const roll = Math.random();
+        showSystemAlert(roll < 0.34 ? "error" : roll < 0.67 ? "warning" : "notice");
     }
     window.addEventListener("load",()=>{
         window.LizzyPerf?.add?.("personalitySystemAlerts", 30000, maybeShowSystemAlert);

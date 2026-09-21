@@ -9,7 +9,8 @@ const BUILTIN_NAMES = {
   amazing: "🌸 Open When You Need Reminding How Amazing You Are",
   hug: "🫂 Open When You Need a Hug",
   laugh: "😂 Open When You Need to Laugh",
-  sick: "🤒 Open When You’re Sick"
+  sick: "🤒 Open When You’re Sick",
+  butterflies: "🦋 Open When You Need Butterflies"
 };
 
 const recentlySent = new Map();

@@ -626,12 +626,6 @@
                 <span id="irDesktopDot" class="irDesktopDot">2</span>
             </div>
 
-            <div class="desktopIcon livingDesktopIcon" id="vipFolderIcon" role="button" tabindex="0" aria-label="Open VIP folder">
-                <div class="desktopEmoji">💎</div>
-                <span>VIP</span>
-                <span id="vipFolderLockBadge" class="irDesktopDot">🔒</span>
-            </div>
-
         </div>
 
 
@@ -947,7 +941,6 @@
                     <button class="letterButton" data-letter="amazing">🌸 Open when you need reminding how amazing you are</button>
                     <button class="letterButton" data-letter="hug">🫂 Open when you need a hug</button>
                     <button class="letterButton" data-letter="laugh">😂 Open when you need to laugh</button>
-                    <button class="letterButton" data-letter="butterflies">🦋 Open when you need butterflies</button>
                     <button class="letterButton" data-letter="sick">🤒 Open when you’re sick</button>
                 </div>
 
@@ -1809,23 +1802,6 @@ if (window.netlifyIdentity) {
   <div id="irStage" class="irStage hidden"></div>
 </div>
 
-<!-- ===== VIP FOLDER: unlocks with 67 MB ===== -->
-<div id="vipFolderWindow" class="desktopWindow hidden">
- <div class="windowTop"><div class="windowDots"><span class="windowCloseDot" id="vipFolderClose"></span><span class="windowMinDot"></span><span class="windowMaxDot"></span></div><h2>💎 VIP</h2></div>
- <div class="windowScroll">
-   <div id="vipFolderLockedView">
-     <p class="memoryMessage">🔒 This folder is locked. Unlocking costs <b>67 MB</b>.</p>
-     <p id="vipFolderBalanceLine"></p>
-     <button type="button" id="vipFolderUnlockBtn">UNLOCK FOR 67 MB 💎</button>
-     <div id="vipFolderStatus"></div>
-   </div>
-   <div id="vipFolderUnlockedView" class="hidden">
-     <p class="memoryMessage">💎 Welcome to VIP. More exclusive features are coming soon.</p>
-   </div>
- </div>
- <button class="windowCloseButton" id="vipFolderCloseBtn">Close</button>
-</div>
-
 <div id="irVipActivation" class="irVipActivation hidden">
   <div class="irVipInner">
     <div class="irVipCrown">👑</div>
@@ -1855,10 +1831,10 @@ if (window.netlifyIdentity) {
   <div id="vipAction"></div>
 </div>
 
-<script src="script.js?v=20260919-butterflies-letter"></script>
+<script src="script.js?v=20260906-badge-visual"></script>
 <script src="living-desktop.js?v=20260906-persona-notify"></script>
 
-<script defer src="internet.js?v=20260915-news-storylines"></script>
+<script defer src="internet.js?v=20260915-batman-catwoman"></script>
 
 
         <div id="seedStoreWindow" data-build="20260818-locked-final" class="desktopWindow hidden seedStoreWindow">
@@ -1951,7 +1927,6 @@ if (window.netlifyIdentity) {
 
 <script src="fun-apps.js?v=20260906-more-questions"></script>
 <script src="interactive-rewards.js?v=20260827-three-line"></script>
-<script src="vip-folder.js?v=20260921-vip-folder"></script>
 <script src="telegram-bank-sync.js?v=20260905-note-display-fix"></script>
 <script src="mikael-connection.js?v=20260907-thought-board"></script>
 
