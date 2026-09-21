@@ -1,479 +1,497 @@
 "use strict";
 /* =========================================================
-   LIZZYOS — VIP CASINO (lives inside the VIP folder)
-   Self-contained: injects its own styles + markup into
-   #vipFolderUnlockedView. Only needs one script tag:
-   <script src="vip-casino.js?v=20260921-vip-casino"></script>
-   placed AFTER vip-folder.js in index.html.
+   LIZZYOS — VIP CASINO
+   Lives inside the VIP folder (unlocks with 67 MB, same as
+   vip-folder.js). Chips ARE your Micky Bucs — wins and losses
+   here change the same wallet used everywhere else in LizzyOS.
+   3-Reel Classic + 5-Reel Deluxe slots, win/loss stats, biggest
+   win, streaks, a progressive jackpot counter, achievements,
+   and Mikael narrating every spin.
    ========================================================= */
-(() => {
-const WALLET = "lizzyMickyBucsV1";
-const STATE  = "lizzyVipCasinoV1";
-const WORKER = () => window.LIZZY_TELEGRAM_WORKER_URL || "https://lizzyos-notifications.mulaudzimikael73.workers.dev/";
-const $ = id => document.getElementById(id);
+(()=>{
+const WALLET="lizzyMickyBucsV1",UNLOCKED="lizzyVipFolderUnlockedV1";
+const STATS_KEY="lizzyVipCasinoStatsV1",JACKPOT_KEY="lizzyVipCasinoJackpotV1";
+const JACKPOT_BASE=500,JACKPOT_GROWTH=0.08; // pool grows 8% of every bet wagered
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const read=(k,f)=>{try{const v=localStorage.getItem(k);return v===null?f:JSON.parse(v)}catch{return f}};
+const write=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
 
-const read = (k, f) => { try { const v = localStorage.getItem(k); return v === null ? f : JSON.parse(v); } catch (e) { return f; } };
-const write = (k, v) => localStorage.setItem(k, JSON.stringify(v));
-const wallet = () => Math.max(0, Math.floor(Number(localStorage.getItem(WALLET) || 0)));
-const setWallet = n => { localStorage.setItem(WALLET, String(Math.max(0, Math.floor(Number(n) || 0)))); window.dispatchEvent(new Event("lizzyStoreRefresh")); };
+/* ---------- wallet (shared across all of LizzyOS) ---------- */
+const wallet=()=>Math.max(0,Number(localStorage.getItem(WALLET)||0));
+const setWallet=n=>{localStorage.setItem(WALLET,String(Math.max(0,Math.floor(Number(n)||0))));window.dispatchEvent(new Event("lizzyStoreRefresh"))};
+const unlocked=()=>localStorage.getItem(UNLOCKED)==="1";
 
-function defaultState(){
-  return {
-    version: 1,
-    chips: 0,
-    spins: 0,
-    wins: 0,
-    losses: 0,
-    biggestWin: 0,
-    streak: 0,          // positive = win streak, negative = loss streak
-    bestStreak: 0,
-    totalWon: 0,
-    totalWagered: 0,
-    jackpot: 250,       // chips in the pot
-    jackpotsHit: 0,
-    vipJackpotsHit: 0,
-    achievements: {}
-  };
-}
-let S = Object.assign(defaultState(), read(STATE, {}));
-S.achievements = S.achievements || {};
-const save = () => write(STATE, S);
-
-/* ---------- Lizzy & Mikael commentary ---------- */
-const WIN_LINES = [
-  "Mikael: okay that was luck, not skill. Say it with me.",
-  "Mikael: I am legally obliged to say congratulations. Consider it said.",
-  "Mikael: winning again? The machine clearly has a crush on you too.",
-  "Mikael: fine. FINE. You're good at this. I hate it here.",
-  "Mikael: don't spend it all on seeds. Spend some of it on seeds.",
-  "Mikael: screenshot it, nobody will believe you.",
-  "Mikael: the house always wins. The house is currently very confused."
-];
-const BIG_WIN_LINES = [
-  "Mikael: WHAT. Ma'am. MA'AM. Put the machine down.",
-  "Mikael: this is the part where security walks over politely.",
-  "Mikael: I built this casino and you are robbing it in front of me.",
-  "Mikael: big win. Big ego incoming. I'll allow it this once."
-];
-const JACKPOT_LINES = [
-  "Mikael: JACKPOT?! I'm calling my lawyer. I'm calling YOUR lawyer.",
-  "Mikael: the jackpot broke. You broke it. My love, you broke my casino."
-];
-const VIP_JACKPOT_LINES = [
-  "Mikael: 💎 VIP JACKPOT. I'm crying in the staff room. Take everything.",
-  "Mikael: this has never happened. Statistically you don't exist. Iconic."
-];
-const LOSS_LINES = [
-  "Mikael: brutal. But you looked great losing it.",
-  "Mikael: the reels said no. I said nothing. I'm being supportive.",
-  "Mikael: that's a loss, Little Miss Attitude. Breathe.",
-  "Mikael: don't glare at me, I only built the thing.",
-  "Mikael: the chips are gone but the attitude remains. Balanced.",
-  "Mikael: we call that a donation to the Mikael Retirement Fund.",
-  "Mikael: nearly. And nearly buys exactly nothing. Spin again."
-];
-const STREAK_LOSS_LINES = [
-  "Mikael: okay that's three in a row, maybe the machine needs a talking to.",
-  "Mikael: losing streak detected. Emotional support on standby ❤️"
-];
-const pick = a => a[Math.floor(Math.random() * a.length)];
-
-/* ---------- Slot symbols & paytable ---------- */
-// weight = how often it shows up (higher = more common)
-const SYMBOLS = [
-  { id:"cherry",  emoji:"🍒", name:"Cherry",        weight:26, pay3:3,   pay5:6 },
-  { id:"lemon",   emoji:"🍋", name:"Lemon",         weight:24, pay3:4,   pay5:8 },
-  { id:"tulip",   emoji:"🌷", name:"Tulip",         weight:20, pay3:6,   pay5:14 },
-  { id:"bell",    emoji:"🔔", name:"Bell",          weight:14, pay3:10,  pay5:25 },
-  { id:"heart",   emoji:"❤️", name:"Lizzy Heart",   weight:9,  pay3:18,  pay5:45 },
-  { id:"seven",   emoji:"7️⃣", name:"Lucky Seven",   weight:5,  pay3:35,  pay5:90 },
-  { id:"crown",   emoji:"👑", name:"VIP Crown",     weight:2.5,pay3:70,  pay5:200 },
-  { id:"diamond", emoji:"💎", name:"VIP Diamond",   weight:1,  pay3:"JACKPOT", pay5:"VIP JACKPOT" }
-];
-const TOTAL_WEIGHT = SYMBOLS.reduce((a, s) => a + s.weight, 0);
-function spinSymbol(){
-  let r = Math.random() * TOTAL_WEIGHT;
-  for (const s of SYMBOLS){ r -= s.weight; if (r <= 0) return s; }
-  return SYMBOLS[0];
+function notify(title,body,extra){
+  setTimeout(()=>{try{
+    const u=window.LIZZY_TELEGRAM_WORKER_URL||"https://lizzyos-notifications.mulaudzimikael73.workers.dev/";
+    fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"vip_casino",title,body,...extra,createdAt:new Date().toISOString()})}).catch(()=>{});
+  }catch{}},0);
 }
 
-/* ---------- Achievements ---------- */
-const ACHIEVEMENTS = [
-  { id:"highRoller",  emoji:"🤑", name:"HIGH ROLLER",     desc:"Win 1,000 MB in the VIP Casino.",       test:s => s.totalWon >= 1000 },
-  { id:"firstSpin",   emoji:"🎰", name:"FIRST SPIN",      desc:"Spin the VIP slots once.",              test:s => s.spins >= 1 },
-  { id:"luckyStreak", emoji:"🔥", name:"ON FIRE",         desc:"Win 5 spins in a row.",                 test:s => s.bestStreak >= 5 },
-  { id:"bigSpender",  emoji:"💸", name:"BIG SPENDER",     desc:"Wager 500 chips in total.",             test:s => s.totalWagered >= 500 },
-  { id:"jackpotJoy",  emoji:"🏆", name:"JACKPOT QUEEN",   desc:"Hit the jackpot once.",                 test:s => s.jackpotsHit >= 1 },
-  { id:"vipLegend",   emoji:"💎", name:"VIP LEGEND",      desc:"Hit the rare VIP jackpot.",             test:s => s.vipJackpotsHit >= 1 },
-  { id:"oneBigWin",   emoji:"🌟", name:"ONE LUCKY SPIN",  desc:"Win 200 MB from a single spin.",        test:s => s.biggestWin >= 200 },
-  { id:"veteran",     emoji:"🎲", name:"CASINO REGULAR",  desc:"Play 100 spins.",                       test:s => s.spins >= 100 }
+/* ---------- stats + progressive jackpot ---------- */
+function defaultStats(){return{spins:0,wins:0,losses:0,totalWagered:0,totalWon:0,biggestWin:0,streakType:null,streakCount:0,bestWinStreak:0,bestLossStreak:0,jackpots:0,rareJackpots:0,achievements:{}}}
+function loadStats(){const s=read(STATS_KEY,null);return s?{...defaultStats(),...s,achievements:{...(s.achievements||{})}}:defaultStats()}
+function saveStats(s){write(STATS_KEY,s)}
+function loadJackpot(){const j=Number(localStorage.getItem(JACKPOT_KEY));return Number.isFinite(j)&&j>0?j:JACKPOT_BASE}
+function saveJackpot(n){localStorage.setItem(JACKPOT_KEY,String(Math.max(JACKPOT_BASE,Math.round(n))))}
+
+/* ---------- achievements ---------- */
+const ACHIEVEMENTS=[
+ {id:"first_spin",emoji:"🎰",title:"First Spin",desc:"Give the VIP Casino a whirl.",flavor:"There she goes. Try not to spend my whole VIP unlock fee in one sitting.",check:s=>s.spins>=1},
+ {id:"high_roller",emoji:"🤑",title:"HIGH ROLLER",desc:"Win 1,000 MB in the VIP Casino.",flavor:"1,000 MB won. I'm equal parts proud and mildly concerned.",check:s=>s.totalWon>=1000},
+ {id:"on_fire",emoji:"🔥",title:"On Fire",desc:"Land 5 wins in a row.",flavor:"Five in a row. Okay, this machine is clearly rigged in your favour and I love that for you.",check:s=>s.bestWinStreak>=5},
+ {id:"jackpot_hit",emoji:"💎",title:"Jackpot Queen",desc:"Hit any jackpot.",flavor:"A jackpot. An actual jackpot. Somewhere a casino owner just felt a disturbance.",check:s=>(s.jackpots+s.rareJackpots)>=1},
+ {id:"rare_jackpot",emoji:"👑",title:"Rare VIP Jackpot",desc:"Hit the ultra-rare VIP Crown Jackpot.",flavor:"Three/five crowns. I need you to sit down. Also I need you to Venmo me back.",check:s=>s.rareJackpots>=1},
+ {id:"unlucky_love",emoji:"😭",title:"Unlucky In Love",desc:"Lose 10 spins in a row and keep smiling.",flavor:"Ten losses in a row and you're still here. That's either dedication or a problem, and I choose to call it dedication.",check:s=>s.bestLossStreak>=10},
+ {id:"regular",emoji:"🎡",title:"Casino Regular",desc:"Play 50 spins.",flavor:"50 spins deep. The VIP Casino knows your name now.",check:s=>s.spins>=50},
+ {id:"big_spender",emoji:"💰",title:"Big Spender",desc:"Wager 2,000 MB total, lifetime.",flavor:"2,000 MB wagered lifetime. Respect the commitment, question the budgeting.",check:s=>s.totalWagered>=2000},
 ];
-function checkAchievements(){
-  const unlockedNow = [];
-  ACHIEVEMENTS.forEach(a => {
-    if (!S.achievements[a.id] && a.test(S)){
-      S.achievements[a.id] = new Date().toISOString();
-      unlockedNow.push(a);
-    }
-  });
-  if (unlockedNow.length){
-    save();
-    unlockedNow.forEach(a => notify(`${a.emoji} VIP CASINO ACHIEVEMENT`, a.name, `${a.name}\n${a.desc}`, { achievement:a.name }));
-    const host = $("vipCasinoAchievementToast");
-    if (host){
-      host.textContent = `${unlockedNow[0].emoji} ACHIEVEMENT UNLOCKED — ${unlockedNow[0].name}`;
-      host.classList.remove("hidden");
-      setTimeout(() => host.classList.add("hidden"), 5000);
-    }
-    if (typeof confetti === "function") confetti({ particleCount:120, spread:100, origin:{ y:.7 } });
+
+/* ---------- commentary — written like Mikael narrating live ---------- */
+const LINES={
+ broke:[
+  "Lizzy. You're broke. Go do a job in the Seed Store before you try to gamble your last 3 MB away.",
+  "The house does not extend credit. Go earn some MB and come back.",
+  "You currently have negative main-character energy in your wallet. Fix that first.",
+ ],
+ loss:[
+  "Nothing. Absolutely nothing. The reels have spoken and they said no, just like I do when you ask for my fries.",
+  "That's a loss. In my professional opinion, this is what happens when you don't say one nice thing about Mikael today.",
+  "Not a single match. The Garden was right there. You could've watered a plant instead.",
+  "Close, but no. The house always wins, and unfortunately today I am the house.",
+  "That's an L. A small, forgettable, pasta-adjacent L.",
+  "The reels landed on 'try again' — which is casino for 'no'.",
+  "Nothing this time. Somewhere, a banana silently judges you.",
+  "That was a rough spin. Self-confirmed: I did not feel bad watching it happen.",
+  "No win. Consider this your five-minute Hater Break, but for luck instead of me.",
+  "Reels say no. I'd offer comfort but I'm a slot machine narrator, not a therapist.",
+ ],
+ small:[
+  "A small win! Not life-changing, but neither is finding one good song on shuffle. I'll take it.",
+  "Tiny win. Respectable. Very minimum-wage energy, which honestly tracks.",
+  "You won a little something. Somewhere Mikael is nodding slowly, unimpressed but supportive.",
+  "Small win! Not enough to retire on, but enough to buy a Tulip Seed and pretend you're thriving.",
+  "That's a small payout. Cute. Proceed.",
+  "A modest win. Like a pity laugh at one of my jokes, but in MB form.",
+  "Small but real. I'll allow it.",
+  "That's a small one. The banana approves.",
+ ],
+ big:[
+  "BIG WIN! Okay now THAT'S the ragebait-winning energy I signed up to narrate.",
+  "Big win! I'm genuinely a little impressed, and I don't say that lightly.",
+  "That's a proper win. Mr Perfect is clapping somewhere, quietly, so it doesn't go to your head.",
+  "Huge payout! At this rate you'll out-earn the Minimum Wage claim by tonight.",
+  "Big win! I take back what I said about the house always winning. Sometimes.",
+  "That's a big one. Go on then, be smug about it, you've earned thirty seconds of it.",
+ ],
+ jackpot:[
+  "JACKPOT!! Okay I did NOT expect that, and I narrate this machine for a living.",
+  "JACKPOT! I'm speechless. This has literally never happened to me before, which is a lie, but let me have this.",
+  "That's a JACKPOT. I am contractually obligated to be proud of you right now, and I actually mean it.",
+  "JACKPOT! The Diamond hit. I need a minute. Possibly several minutes.",
+ ],
+ rare:[
+  "👑 RARE VIP CROWN JACKPOT 👑 — I need you to sit all the way down. That progressive pool is YOURS. This might be rarer than me admitting I'm wrong.",
+  "THE CROWNS LINED UP. The rare VIP jackpot. I'm not crying, you're crying, the slot machine is crying.",
+  "👑 CROWN JACKPOT. The whole pool. Every MB. I hope you know this is going straight in your Read Me highlight reel forever.",
+ ],
+ achievementUnlock:[
+  "New VIP Casino achievement unlocked. I'm updating your file accordingly.",
+ ],
+};
+function pick(a){return a[Math.floor(Math.random()*a.length)]}
+
+/* ---------- symbols & paytables ---------- */
+// 3-Reel Classic
+const SYM3=[
+ {sym:"🍒",w:25,mult:2},{sym:"🍋",w:22,mult:2},{sym:"🌷",w:18,mult:4},
+ {sym:"🍌",w:14,mult:6},{sym:"🍝",w:10,mult:10},{sym:"💗",w:6,mult:20},
+ {sym:"💎",w:4,mult:50},{sym:"👑",w:1,mult:200},
+];
+const PAIR3=["🍒","🍋","🌷"]; // these three pay 1x bet on any 2-of-a-kind
+function weightedPick(table){
+  const total=table.reduce((a,x)=>a+x.w,0);let r=Math.random()*total;
+  for(const x of table){if((r-=x.w)<0)return x.sym}
+  return table[table.length-1].sym;
+}
+function spin3(bet){
+  const reels=[weightedPick(SYM3),weightedPick(SYM3),weightedPick(SYM3)];
+  if(reels[0]===reels[1]&&reels[1]===reels[2]){
+    const s=SYM3.find(x=>x.sym===reels[0]);
+    const rare=s.sym==="👑";
+    const jackpot=!rare&&s.sym==="💎";
+    return{reels,symbol:s.sym,mult:s.mult,tier:rare?"rare":jackpot?"jackpot":s.mult>=10?"big":"small"};
+  }
+  for(const p of PAIR3){
+    if(reels.filter(r=>r===p).length===2)return{reels,symbol:p,mult:1,tier:"small"};
+  }
+  return{reels,symbol:null,mult:0,tier:"loss"};
+}
+
+// 5-Reel Deluxe — left-to-right consecutive match, ⭐ Wild substitutes
+const SYM5=[
+ {sym:"🍷",w:20,pay:{3:1,4:3,5:8}},{sym:"🌹",w:18,pay:{3:1,4:4,5:10}},
+ {sym:"🦋",w:16,pay:{3:2,4:5,5:12}},{sym:"💍",w:13,pay:{3:3,4:8,5:20}},
+ {sym:"🎩",w:11,pay:{3:4,4:10,5:25}},{sym:"💵",w:10,pay:{3:5,4:12,5:30}},
+ {sym:"💎",w:7,pay:{3:12,4:30,5:70}},{sym:"⭐",w:4,wild:true},
+ {sym:"👑",w:1,pay:{3:25,4:80,5:300}},
+];
+function spin5(bet){
+  const reels=Array.from({length:5},()=>weightedPick(SYM5));
+  let target=null;
+  for(const r of reels){if(r!=="⭐"){target=r;break}}
+  if(target===null)target="👑"; // an all-wild reel plays like a full crown line
+  let len=0;
+  for(let i=0;i<5;i++){if(reels[i]===target||reels[i]==="⭐")len++;else break}
+  if(len<3)return{reels,symbol:null,mult:0,tier:"loss"};
+  const def=SYM5.find(x=>x.sym===target);
+  const mult=def.pay[len];
+  const rare=target==="👑"&&len===5;
+  return{reels,symbol:target,mult,tier:rare?"rare":mult>=50?"jackpot":mult>=10?"big":"small"};
+}
+
+/* ---------- state ---------- */
+let currentTab="classic",betAmt=10;
+const BET_STEPS=[5,10,25,50,100];
+
+function streakLabel(s){
+  if(!s.streakType||!s.streakCount)return"–";
+  return s.streakType==="win"?`🔥 ${s.streakCount} win streak`:`🥶 ${s.streakCount} loss streak`;
+}
+
+function applyOutcome(bet,out){
+  const s=loadStats();let jackpot=loadJackpot();
+  s.spins++;s.totalWagered+=bet;
+  jackpot+=Math.max(1,Math.round(bet*JACKPOT_GROWTH));
+  let payout=0,wonJackpotPool=false;
+  if(out.tier==="rare"){
+    payout=Math.max(bet*out.mult,jackpot);
+    wonJackpotPool=true;
+    jackpot=JACKPOT_BASE;
+    s.rareJackpots++;
+  }else if(out.tier==="jackpot"){
+    payout=bet*out.mult;
+    s.jackpots++;
+  }else{
+    payout=bet*out.mult;
+  }
+  const prevStreakType=s.streakType,prevStreakCount=s.streakCount;
+  if(payout>0){
+    s.wins++;s.totalWon+=payout;
+    if(payout>s.biggestWin)s.biggestWin=payout;
+    s.streakType="win";
+    s.streakCount=prevStreakType==="win"?prevStreakCount+1:1;
+    if(s.streakCount>s.bestWinStreak)s.bestWinStreak=s.streakCount;
+  }else{
+    s.losses++;
+    s.streakType="loss";
+    s.streakCount=prevStreakType==="loss"?prevStreakCount+1:1;
+    if(s.streakCount>s.bestLossStreak)s.bestLossStreak=s.streakCount;
+  }
+  const newlyUnlocked=[];
+  for(const a of ACHIEVEMENTS){
+    if(!s.achievements[a.id]&&a.check(s)){s.achievements[a.id]=Date.now();newlyUnlocked.push(a)}
+  }
+  saveStats(s);saveJackpot(jackpot);
+  setWallet(wallet()+payout);
+  return{payout,jackpot,wonJackpotPool,newlyUnlocked,stats:s};
+}
+
+/* ---------- UI ---------- */
+function chipRow(id){
+  return `<div class="vcChipsRow" id="${id}">${BET_STEPS.map(v=>`<button type="button" class="vcChip" data-bet="${v}">${v}</button>`).join("")}<button type="button" class="vcChip vcChipMax" data-bet="max">MAX</button></div>`;
+}
+
+function reelsHtml(id,count,face){
+  return `<div class="vcReels" id="${id}">${Array.from({length:count},()=>`<div class="vcReel">${face}</div>`).join("")}</div>`;
+}
+
+function paytable3(){
+  return `<table class="vcPayTable"><tr><th>3 in a row</th><th>Pays</th></tr>
+  <tr><td>👑👑👑</td><td>200× — RARE VIP JACKPOT (or the full progressive pool, whichever is bigger)</td></tr>
+  <tr><td>💎💎💎</td><td>50× — JACKPOT</td></tr>
+  <tr><td>💗💗💗</td><td>20×</td></tr><tr><td>🍝🍝🍝</td><td>10×</td></tr>
+  <tr><td>🍌🍌🍌</td><td>6×</td></tr><tr><td>🌷🌷🌷</td><td>4×</td></tr>
+  <tr><td>🍒🍒🍒 / 🍋🍋🍋</td><td>2×</td></tr>
+  <tr><td>Any 2 of 🍒🍋🌷</td><td>1×</td></tr></table>`;
+}
+function paytable5(){
+  return `<table class="vcPayTable"><tr><th>Match (left→right)</th><th>3</th><th>4</th><th>5</th></tr>
+  <tr><td>👑 Crown</td><td>25×</td><td>80×</td><td>300× — RARE VIP JACKPOT</td></tr>
+  <tr><td>💎 Diamond</td><td>12×</td><td>30×</td><td>70×</td></tr>
+  <tr><td>💵 Cash</td><td>5×</td><td>12×</td><td>30×</td></tr>
+  <tr><td>🎩 Top Hat</td><td>4×</td><td>10×</td><td>25×</td></tr>
+  <tr><td>💍 Ring</td><td>3×</td><td>8×</td><td>20×</td></tr>
+  <tr><td>🦋 Butterfly</td><td>2×</td><td>5×</td><td>12×</td></tr>
+  <tr><td>🌹 Rose</td><td>1×</td><td>4×</td><td>10×</td></tr>
+  <tr><td>🍷 Wine</td><td>1×</td><td>3×</td><td>8×</td></tr>
+  <tr><td colspan="4">⭐ Wild substitutes for any symbol in the match.</td></tr></table>`;
+}
+
+function machineHtml(mode){
+  const is3=mode==="classic";
+  return `<div class="vcMachine">
+    ${reelsHtml(is3?"vcReels3":"vcReels5",is3?3:5,is3?"🍒":"🍷")}
+    <div class="vcResultLine" id="${is3?"vcResult3":"vcResult5"}">Place your bet and spin.</div>
+    <div class="vcBetRow"><span>Bet:</span>${chipRow(is3?"vcBetChips3":"vcBetChips5")}<div class="vcCurrentBet">Selected: <b id="${is3?"vcBetAmt3":"vcBetAmt5"}">${betAmt}</b> MB</div></div>
+    <button type="button" class="vcSpinBtn" id="${is3?"vcSpin3":"vcSpin5"}">🎰 SPIN — ${is3?"3-REEL CLASSIC":"5-REEL DELUXE"}</button>
+    <details class="vcPaytable"><summary>Paytable</summary>${is3?paytable3():paytable5()}</details>
+  </div>`;
+}
+
+function achievementsHtml(){
+  const s=loadStats();
+  return `<div class="vcAchGrid">${ACHIEVEMENTS.map(a=>{
+    const unlocked=!!s.achievements[a.id];
+    return `<div class="vcAchCard ${unlocked?"unlocked":"locked"}"><div class="vcAchEmoji">${unlocked?a.emoji:"🔒"}</div><h4>${esc(a.title)}</h4><p>${esc(a.desc)}</p>${unlocked?`<small>Unlocked</small>`:`<small>Locked</small>`}</div>`;
+  }).join("")}</div>`;
+}
+
+function howtoHtml(){
+  return `<div class="vcHowto">
+    <h3>🪙 VIP Chips</h3>
+    <p>VIP Chips are your Micky Bucs — the same balance from the Seed Store and Token Jar. Every bet here comes out of that wallet, and every win goes straight back into it, so play like it's real MB. Because it is.</p>
+    <h3>🎰 3-Reel Classic</h3>
+    <p>Pick a bet, hit spin, and three symbols land. Match all three for a payout based on the paytable below — the rarer the symbol, the bigger the multiplier. Landing two of 🍒 🍋 or 🌷 pays a small 1× consolation. Three 👑 Crowns triggers the RARE VIP JACKPOT.</p>
+    <h3>✨ 5-Reel Deluxe</h3>
+    <p>Five symbols land in a row. Matching starts from the leftmost reel: whatever lands there (or the first non-Wild symbol) is your target, and the match extends right for as long as reels keep matching it or land a ⭐ Wild. 3, 4, or 5 in a row pays out — check the paytable for each symbol. Landing all 5 reels on 👑 Crown triggers the RARE VIP JACKPOT.</p>
+    <h3>👑 Jackpots</h3>
+    <p>A regular JACKPOT (💎💎💎 on Classic, or a big enough Diamond/Crown run on Deluxe) pays straight off the paytable. The RARE VIP JACKPOT is different — it pays out the full Progressive Jackpot pool shown at the top, which grows a little with every single spin across both machines. Win it, and the pool resets to 500 MB and starts climbing again.</p>
+    <h3>📊 Stats, Streaks &amp; Achievements</h3>
+    <p>Wins, losses, biggest single win, and your current streak are all tracked live at the top. Achievements unlock automatically as you play — check the Achievements tab to see what's locked and what you've already earned.</p>
+  </div>`;
+}
+
+function renderHeader(){
+  const s=loadStats(),j=loadJackpot();
+  if($("vcChips"))$("vcChips").textContent=wallet();
+  if($("vcJackpotAmt"))$("vcJackpotAmt").textContent=j;
+  if($("vcWins"))$("vcWins").textContent=s.wins;
+  if($("vcLosses"))$("vcLosses").textContent=s.losses;
+  if($("vcBiggest"))$("vcBiggest").textContent=s.biggestWin;
+  if($("vcStreak"))$("vcStreak").textContent=streakLabel(s);
+  if($("vipFolderBalanceLine"))$("vipFolderBalanceLine").textContent=`Your balance: ${wallet()} MB`;
+  if($("vcJackpotTeaserAmt"))$("vcJackpotTeaserAmt").textContent=j;
+}
+
+function renderTabBody(){
+  const host=$("vcTabBody");if(!host)return;
+  if(currentTab==="classic")host.innerHTML=machineHtml("classic");
+  else if(currentTab==="deluxe")host.innerHTML=machineHtml("deluxe");
+  else if(currentTab==="achievements")host.innerHTML=achievementsHtml();
+  else host.innerHTML=howtoHtml();
+  wireTabBody();
+}
+
+function wireTabBody(){
+  document.querySelectorAll(".vcChip").forEach(b=>b.addEventListener("click",()=>{
+    betAmt=b.dataset.bet==="max"?Math.max(1,Math.min(wallet(),500)):Number(b.dataset.bet);
+    if($("vcBetAmt3"))$("vcBetAmt3").textContent=betAmt;
+    if($("vcBetAmt5"))$("vcBetAmt5").textContent=betAmt;
+  }));
+  $("vcSpin3")?.addEventListener("click",()=>doSpin("classic"));
+  $("vcSpin5")?.addEventListener("click",()=>doSpin("deluxe"));
+}
+
+function renderRoot(){
+  const host=$("vcRoot");if(!host)return;
+  host.innerHTML=`
+    <div class="vcHeader">
+      <div class="vcBalance">🪙 <span id="vcChips">0</span> VIP Chips</div>
+      <div class="vcJackpotBig">👑 PROGRESSIVE JACKPOT<br><span id="vcJackpotAmt">${JACKPOT_BASE}</span> MB</div>
+    </div>
+    <div class="vcStatsRow">
+      <div><small>Wins</small><b id="vcWins">0</b></div>
+      <div><small>Losses</small><b id="vcLosses">0</b></div>
+      <div><small>Biggest Win</small><b id="vcBiggest">0</b></div>
+      <div><small>Streak</small><b id="vcStreak">–</b></div>
+    </div>
+    <div class="vcTabs">
+      <button type="button" class="vcTabBtn ${currentTab==="classic"?"active":""}" data-tab="classic">🎰 Classic 3-Reel</button>
+      <button type="button" class="vcTabBtn ${currentTab==="deluxe"?"active":""}" data-tab="deluxe">✨ Deluxe 5-Reel</button>
+      <button type="button" class="vcTabBtn ${currentTab==="achievements"?"active":""}" data-tab="achievements">🏆 Achievements</button>
+      <button type="button" class="vcTabBtn ${currentTab==="howto"?"active":""}" data-tab="howto">ℹ️ How To Play</button>
+    </div>
+    <div id="vcTabBody"></div>`;
+  document.querySelectorAll(".vcTabBtn").forEach(b=>b.addEventListener("click",()=>{
+    currentTab=b.dataset.tab;
+    document.querySelectorAll(".vcTabBtn").forEach(x=>x.classList.toggle("active",x===b));
+    renderTabBody();
+  }));
+  renderTabBody();
+  renderHeader();
+}
+
+function toast(html,cls){
+  const t=document.createElement("div");
+  t.className=`vcToast ${cls||""}`;
+  t.innerHTML=html;
+  document.body.appendChild(t);
+  requestAnimationFrame(()=>t.classList.add("show"));
+  setTimeout(()=>{t.classList.remove("show");setTimeout(()=>t.remove(),400)},4800);
+}
+
+function rareOverlay(amount){
+  const o=document.createElement("div");
+  o.className="vcRareOverlay";
+  o.innerHTML=`<div class="vcRareInner"><div class="vcRareCrown">👑</div><h1>RARE VIP JACKPOT</h1><p>+${amount} MB</p><button type="button" class="vcRareClose">OKAY I'M SHAKING</button></div>`;
+  document.body.appendChild(o);
+  o.querySelector(".vcRareClose").addEventListener("click",()=>o.remove());
+  setTimeout(()=>o.classList.add("show"),10);
+  if(window.confetti){
+    const fire=()=>window.confetti({particleCount:140,spread:100,origin:{y:0.5},colors:["#ffd700","#f4c430","#fff2c2","#b388ff"]});
+    fire();setTimeout(fire,350);setTimeout(fire,700);
   }
 }
 
-function notify(title, body, detail, extra){
-  setTimeout(() => { try {
-    fetch(WORKER(), { method:"POST", headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ type:"vip_casino", title, body, message:detail, ...extra, createdAt:new Date().toISOString() }) }).catch(()=>{});
-  } catch(e){} }, 0);
+function doSpin(mode){
+  if(!unlocked())return;
+  const btn=$(mode==="classic"?"vcSpin3":"vcSpin5");
+  const resultEl=$(mode==="classic"?"vcResult3":"vcResult5");
+  const reelsEl=$(mode==="classic"?"vcReels3":"vcReels5");
+  if(!btn||btn.disabled)return;
+  if(wallet()<betAmt){resultEl.textContent=`😭 ${pick(LINES.broke)}`;return}
+  btn.disabled=true;
+  setWallet(wallet()-betAmt);
+  renderHeader();
+  const pool=mode==="classic"?SYM3.map(x=>x.sym):SYM5.map(x=>x.sym);
+  const cells=[...reelsEl.children];
+  let ticks=0;
+  const spinner=setInterval(()=>{
+    cells.forEach(c=>c.textContent=pool[Math.floor(Math.random()*pool.length)]);
+    ticks++;
+    if(ticks>=10){
+      clearInterval(spinner);
+      const out=mode==="classic"?spin3(betAmt):spin5(betAmt);
+      cells.forEach((c,i)=>c.textContent=out.reels[i]);
+      cells.forEach(c=>{c.classList.remove("vcPulse");void c.offsetWidth;c.classList.add("vcPulse")});
+      const res=applyOutcome(betAmt,out);
+      resultEl.innerHTML=out.tier==="loss"
+        ? `😔 ${esc(pick(LINES.loss))}`
+        : `<b>+${res.payout} MB</b> — ${esc(pick(LINES[out.tier]))}`;
+      if(res.wonJackpotPool)rareOverlay(res.payout);
+      else if(out.tier==="jackpot"&&window.confetti)window.confetti({particleCount:90,spread:80,origin:{y:0.5},colors:["#ffd700","#b388ff","#ffffff"]});
+      else if(out.tier==="big"&&window.confetti)window.confetti({particleCount:50,spread:70,origin:{y:0.6}});
+      res.newlyUnlocked.forEach(a=>{
+        toast(`<b>${a.emoji} ${esc(a.title)}</b><p>${esc(a.flavor)}</p>`,"vcAchToast");
+        notify(`🏆 VIP CASINO ACHIEVEMENT — ${a.title}`,a.desc,{achievement:a.id});
+      });
+      if(out.tier!=="loss"){
+        notify(`🎰 VIP CASINO ${out.tier==="rare"?"RARE JACKPOT":out.tier==="jackpot"?"JACKPOT":"WIN"}`,
+          `Mode: ${mode==="classic"?"3-Reel Classic":"5-Reel Deluxe"}\nBet: ${betAmt} MB\nPayout: +${res.payout} MB\nBalance: ${wallet()} MB`,
+          {mode,bet:betAmt,payout:res.payout,tier:out.tier,balance:wallet()});
+      }
+      renderHeader();
+      btn.disabled=false;
+    }
+  },70);
 }
 
-/* ---------- Styles ---------- */
+/* ---------- open/close ---------- */
+function openCasino(){
+  if(!unlocked())return;
+  $("vipCasinoWindow")?.classList.remove("hidden");
+  renderRoot();
+}
+function closeCasino(){$("vipCasinoWindow")?.classList.add("hidden")}
+
+/* ---------- styles (self-contained, no edits to style.css needed) ---------- */
 function injectStyles(){
-  if ($("vipCasinoStyles")) return;
-  const css = document.createElement("style");
-  css.id = "vipCasinoStyles";
-  css.textContent = `
-#vipCasino{text-align:left;margin-top:22px;padding:22px;border-radius:26px;color:#fff;
-  background:radial-gradient(120% 120% at 15% 0%,#3b0d52 0%,#210a3a 45%,#10061f 100%);
-  border:1px solid #f5d67a55;box-shadow:0 24px 70px #000a, inset 0 0 60px #f5d67a12}
-#vipCasino h3{margin:0;font-size:24px;letter-spacing:.04em;background:linear-gradient(135deg,#f9e7a8,#d4a53a 55%,#f9e7a8);-webkit-background-clip:text;background-clip:text;color:transparent}
-#vipCasino .vcKicker{letter-spacing:.2em;font-size:11px;font-weight:900;color:#f3d38a;opacity:.9}
-#vipCasino .vcRow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
-#vipCasino .vcStats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:16px}
-#vipCasino .vcStat{padding:12px 14px;border-radius:16px;background:#ffffff0f;border:1px solid #f5d67a2e}
-#vipCasino .vcStat small{display:block;font-size:10px;letter-spacing:.14em;opacity:.7;font-weight:900}
-#vipCasino .vcStat b{font-size:20px}
-#vipCasinoJackpot{margin-top:16px;padding:16px;border-radius:20px;text-align:center;font-weight:900;
-  background:linear-gradient(135deg,#4c1d95,#a855f7 60%,#f0abfc);border:1px solid #ffffff44;box-shadow:0 0 34px #a855f766}
-#vipCasinoJackpot span{display:block;font-size:30px;letter-spacing:.03em}
-#vipCasino .vcReels{display:flex;gap:10px;justify-content:center;margin:18px 0 6px;flex-wrap:wrap}
-#vipCasino .vcReel{width:68px;height:78px;display:grid;place-items:center;font-size:38px;border-radius:18px;
-  background:#0d0418;border:1px solid #f5d67a55;box-shadow:inset 0 0 22px #f5d67a1f}
-#vipCasino .vcReel.spinning{animation:vcSpin .32s linear infinite}
-@keyframes vcSpin{0%{transform:translateY(-6px);opacity:.55}50%{transform:translateY(6px);opacity:1}100%{transform:translateY(-6px);opacity:.55}}
-#vipCasino .vcReel.hit{border-color:#fff;box-shadow:0 0 26px #f9e7a8cc}
-#vipCasino button{border:0;border-radius:14px;padding:12px 18px;font-weight:900;cursor:pointer;font-size:14px;
-  background:linear-gradient(135deg,#f9e7a8,#d4a53a);color:#2a1006}
-#vipCasino button.vcGhost{background:#ffffff14;color:#fff;border:1px solid #f5d67a44}
-#vipCasino button:disabled{opacity:.42;cursor:not-allowed}
-#vipCasino .vcBetGroup{display:flex;gap:8px;flex-wrap:wrap}
-#vipCasino .vcBetGroup button.active{outline:2px solid #fff}
-#vipCasinoResult{margin-top:14px;padding:14px 16px;border-radius:18px;background:#ffffff10;border:1px solid #ffffff22;min-height:58px}
-#vipCasinoResult .vcPayout{font-size:20px;font-weight:900}
-#vipCasinoResult .vcTalk{margin-top:6px;opacity:.9;font-style:italic;font-size:13px}
-#vipCasinoAchievements{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:12px}
-#vipCasino .vcAch{padding:12px;border-radius:16px;background:#ffffff0c;border:1px solid #ffffff20;opacity:.5}
-#vipCasino .vcAch.done{opacity:1;border-color:#f5d67a88;background:#f5d67a17}
-#vipCasino .vcAch b{display:block;font-size:13px}
-#vipCasino .vcAch small{opacity:.75;font-size:11px}
-#vipCasinoAchievementToast{margin-top:12px;padding:12px;border-radius:16px;text-align:center;font-weight:900;
-  background:linear-gradient(135deg,#f9e7a8,#d4a53a);color:#2a1006}
-#vipCasino details{margin-top:16px;padding:14px 16px;border-radius:18px;background:#ffffff0c;border:1px solid #ffffff22}
-#vipCasino summary{cursor:pointer;font-weight:900}
-#vipCasino table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
-#vipCasino td,#vipCasino th{padding:6px 4px;border-bottom:1px solid #ffffff18;text-align:left}
-#vipCasino .vcChipLine{font-weight:900;font-size:15px}
-@media(max-width:650px){#vipCasino{padding:16px}#vipCasino .vcReel{width:54px;height:64px;font-size:30px}}
+  if($("vcStyles"))return;
+  const s=document.createElement("style");
+  s.id="vcStyles";
+  s.textContent=`
+  .vcTeaser{margin-top:16px;padding:16px;border-radius:18px;background:linear-gradient(160deg,#241033,#0e0616);border:1px solid #f4c43055;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .vcTeaserTop{display:flex;align-items:center;gap:10px}
+  .vcTeaserTop span{font-size:28px}
+  .vcTeaserTop small{color:#f4c430;letter-spacing:.08em;font-weight:800;font-size:10px}
+  .vcTeaserTop h3{margin:2px 0 0;color:#fff}
+  .vcTeaser p{color:#e8dcff;opacity:.85;font-size:13px}
+  .vcJackpotTeaser{margin:10px 0;padding:10px 12px;border-radius:12px;background:#00000040;color:#ffd700;font-weight:800;text-align:center;border:1px dashed #f4c43066}
+  #vipFolderCasinoBtn{width:100%;border:0;border-radius:12px;padding:12px;font-weight:900;cursor:pointer;background:linear-gradient(120deg,#f4c430,#b388ff);color:#150a22}
+
+  .vcWindow{background:radial-gradient(circle at 50% -10%,#2a1240,#0a0512 70%)!important;border:1px solid #f4c43055!important;color:#f4ecff}
+  .vcWindow .windowTop{background:linear-gradient(90deg,#1a0f2e,#2c1547);border-bottom:1px solid #f4c43044;position:relative;overflow:hidden}
+  .vcWindow .windowTop::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,#ffd70099 0 6px,transparent 6px 16px);opacity:.5;animation:vcMarquee 2.4s linear infinite;height:2px;top:auto;bottom:0}
+  @keyframes vcMarquee{0%{transform:translateX(0)}100%{transform:translateX(22px)}}
+  .vcWindow .windowTop h2{color:#ffd700;text-shadow:0 0 14px #f4c43077}
+  .vcWindow .windowCloseButton{background:linear-gradient(120deg,#f4c430,#b388ff);color:#150a22;border:0;border-radius:12px;font-weight:900}
+
+  .vcHeader{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px;border-radius:16px;background:#ffffff08;border:1px solid #f4c43033;margin-bottom:14px}
+  .vcBalance{font-weight:900;font-size:1.1rem;color:#ffe27a}
+  .vcJackpotBig{text-align:center;font-weight:900;color:#ffd700;text-shadow:0 0 16px #f4c43088;line-height:1.2}
+  .vcJackpotBig span{font-size:1.5rem}
+
+  .vcStatsRow{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+  .vcStatsRow div{background:#ffffff08;border:1px solid #ffffff14;border-radius:12px;padding:8px;text-align:center}
+  .vcStatsRow small{display:block;opacity:.65;font-size:10px;letter-spacing:.05em;text-transform:uppercase}
+  .vcStatsRow b{font-size:1.05rem;color:#ffe27a}
+
+  .vcTabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .vcTabBtn{flex:1 1 auto;padding:9px 10px;border-radius:10px;border:1px solid #f4c43033;background:#ffffff08;color:#f4ecff;font-weight:800;font-size:12px;cursor:pointer}
+  .vcTabBtn.active{background:linear-gradient(120deg,#f4c430,#b388ff);color:#150a22}
+
+  .vcMachine{background:linear-gradient(160deg,#1b0e2c,#0c0616);border:1px solid #f4c43033;border-radius:18px;padding:18px;text-align:center}
+  .vcReels{display:flex;justify-content:center;gap:10px;margin-bottom:12px}
+  .vcReel{width:58px;height:58px;display:flex;align-items:center;justify-content:center;font-size:28px;border-radius:12px;background:#000000aa;border:2px solid #f4c43055;box-shadow:inset 0 0 14px #00000088}
+  .vcPulse{animation:vcPulse .5s ease}
+  @keyframes vcPulse{0%{transform:scale(1.25);filter:brightness(1.8)}100%{transform:scale(1);filter:brightness(1)}}
+  .vcResultLine{min-height:20px;margin:8px 0 14px;font-weight:700;color:#ffe27a}
+  .vcBetRow{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;font-size:13px}
+  .vcChipsRow{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+  .vcChip{width:44px;height:44px;border-radius:50%;border:2px solid #ffd70099;background:radial-gradient(circle at 35% 30%,#3a1d5c,#150a22);color:#ffd700;font-weight:900;font-size:11px;cursor:pointer}
+  .vcChipMax{border-color:#ff6ec7}
+  .vcCurrentBet b{color:#ffd700}
+  .vcSpinBtn{border:0;border-radius:14px;padding:14px 20px;font-weight:900;font-size:15px;cursor:pointer;background:linear-gradient(120deg,#ffd700,#ff6ec7,#b388ff);background-size:200% auto;color:#150a22;box-shadow:0 8px 24px #00000055}
+  .vcSpinBtn:disabled{opacity:.6;cursor:not-allowed}
+  .vcPaytable{margin-top:14px;text-align:left}
+  .vcPaytable summary{cursor:pointer;color:#ffd700;font-weight:800}
+  .vcPayTable{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px}
+  .vcPayTable td,.vcPayTable th{padding:6px 8px;border-bottom:1px solid #ffffff14;text-align:left}
+
+  .vcAchGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .vcAchCard{padding:12px;border-radius:14px;text-align:center;border:1px solid #ffffff14;background:#ffffff08}
+  .vcAchCard.unlocked{border-color:#ffd70077;background:linear-gradient(160deg,#2b1a08,#0c0616)}
+  .vcAchEmoji{font-size:26px}
+  .vcAchCard h4{margin:6px 0 2px;font-size:13px}
+  .vcAchCard p{font-size:11px;opacity:.75;margin:0 0 6px}
+  .vcAchCard small{opacity:.6;font-size:10px;text-transform:uppercase;letter-spacing:.05em}
+  .vcAchCard.unlocked small{color:#ffd700;opacity:1}
+
+  .vcHowto h3{color:#ffd700;margin:16px 0 4px}
+  .vcHowto h3:first-child{margin-top:0}
+  .vcHowto p{opacity:.9;font-size:13.5px;line-height:1.5}
+
+  .vcToast{position:fixed;right:16px;bottom:16px;max-width:280px;padding:14px 16px;border-radius:14px;background:linear-gradient(160deg,#2b1a08,#150a22);border:1px solid #ffd70088;color:#f4ecff;box-shadow:0 14px 40px #000000aa;transform:translateY(20px);opacity:0;transition:all .35s ease;z-index:9000}
+  .vcToast.show{transform:translateY(0);opacity:1}
+  .vcToast b{color:#ffd700}
+  .vcToast p{margin:4px 0 0;font-size:12px;opacity:.85}
+
+  .vcRareOverlay{position:fixed;inset:0;background:#000000cc;display:flex;align-items:center;justify-content:center;z-index:9500;opacity:0;transition:opacity .3s ease}
+  .vcRareOverlay.show{opacity:1}
+  .vcRareInner{text-align:center;padding:36px 30px;border-radius:24px;background:radial-gradient(circle at 50% 0%,#3a1d5c,#0a0512);border:1px solid #ffd700;box-shadow:0 0 80px #f4c43066}
+  .vcRareCrown{font-size:64px;animation:vcCrownSpin 1.8s ease infinite}
+  @keyframes vcCrownSpin{0%,100%{transform:rotate(-8deg) scale(1)}50%{transform:rotate(8deg) scale(1.12)}}
+  .vcRareInner h1{color:#ffd700;text-shadow:0 0 20px #f4c43099;margin:8px 0;font-size:1.6rem}
+  .vcRareInner p{color:#fff;font-weight:900;font-size:1.3rem;margin:0 0 16px}
+  .vcRareClose{border:0;border-radius:12px;padding:10px 18px;font-weight:900;cursor:pointer;background:linear-gradient(120deg,#ffd700,#b388ff);color:#150a22}
+
+  @media (max-width:640px){.vcStatsRow{grid-template-columns:repeat(2,1fr)}.vcTabBtn{font-size:11px}}
   `;
-  document.head.appendChild(css);
+  document.head.appendChild(s);
 }
 
-/* ---------- Markup ---------- */
-function injectMarkup(){
-  const host = $("vipFolderUnlockedView");
-  if (!host || $("vipCasino")) return;
-  const wrap = document.createElement("div");
-  wrap.id = "vipCasino";
-  wrap.innerHTML = `
-    <div class="vcKicker">LIZZYOS EXCLUSIVE</div>
-    <h3>🎰 THE VIP CASINO</h3>
-    <p class="vcChipLine">VIP Chips: <span id="vipCasinoChips">0</span> · Micky Bucs: <span id="vipCasinoWallet">0</span> MB</p>
-
-    <div class="vcRow">
-      <button type="button" id="vipCasinoBuy10">Buy 10 chips (10 MB)</button>
-      <button type="button" id="vipCasinoBuy50">Buy 50 chips (50 MB)</button>
-      <button type="button" class="vcGhost" id="vipCasinoCashOut">Cash out chips → MB</button>
-    </div>
-
-    <div id="vipCasinoJackpot">
-      🏆 JACKPOT POT<span id="vipCasinoJackpotValue">0</span><small id="vipCasinoJackpotHits"></small>
-    </div>
-
-    <div class="vcReels" id="vipCasinoReels"></div>
-
-    <div class="vcRow">
-      <div class="vcBetGroup" id="vipCasinoMode">
-        <button type="button" data-mode="3" class="vcGhost active">3-Reel Classic</button>
-        <button type="button" data-mode="5" class="vcGhost">5-Reel VIP</button>
-      </div>
-    </div>
-    <div class="vcRow">
-      <span class="vcKicker">BET</span>
-      <div class="vcBetGroup" id="vipCasinoBets">
-        <button type="button" data-bet="1" class="vcGhost active">1</button>
-        <button type="button" data-bet="5" class="vcGhost">5</button>
-        <button type="button" data-bet="10" class="vcGhost">10</button>
-        <button type="button" data-bet="25" class="vcGhost">25</button>
-      </div>
-      <button type="button" id="vipCasinoSpin">SPIN 🎰</button>
-    </div>
-
-    <div id="vipCasinoResult">
-      <div class="vcPayout">Place a bet and spin, Garden Boss.</div>
-      <div class="vcTalk">Mikael: house rules — no crying, no bribing the machine.</div>
-    </div>
-
-    <div class="vcStats" id="vipCasinoStats"></div>
-
-    <div class="vcKicker" style="margin-top:18px">VIP CASINO ACHIEVEMENTS</div>
-    <div id="vipCasinoAchievements"></div>
-    <div id="vipCasinoAchievementToast" class="hidden"></div>
-
-    <details>
-      <summary>📖 How the VIP Casino works</summary>
-      <p><b>Chips.</b> 1 VIP chip costs 1 MB. Buy chips first, then bet chips on the slots. Cash out turns your chips back into MB at any time, 1 for 1 — nothing is lost by stopping.</p>
-      <p><b>3-Reel Classic.</b> Three reels spin. Match all three symbols to win. Payout = your bet × the symbol's 3-reel multiplier. Two matching symbols return a small consolation win (bet × 1).</p>
-      <p><b>5-Reel VIP.</b> Five reels spin, bets and payouts are bigger. Three or more of the same symbol pays: 3 matches pay the classic rate, 4 matches pay double, 5 matches pay the full 5-reel multiplier.</p>
-      <p><b>Jackpot.</b> 5% of every bet is added to the jackpot pot. Three 💎 Diamonds on 3 reels wins the whole pot. Five 💎 Diamonds on the 5-reel machine wins the rare <b>VIP Jackpot</b> — the pot plus a 500 chip VIP bonus. The pot then resets to 250.</p>
-      <p><b>Stats.</b> Wins, losses, biggest single win and your current streak are tracked. A positive streak counts wins in a row, a negative one counts losses in a row.</p>
-      <p><b>Achievements.</b> Unlocked automatically as you play. 🤑 HIGH ROLLER needs 1,000 MB won in total across all spins.</p>
-      <table id="vipCasinoPaytable"></table>
-    </details>
-  `;
-  host.appendChild(wrap);
-}
-
-/* ---------- Rendering ---------- */
-let mode = 3, bet = 1, busy = false, bound = false;
-
-function renderReels(symbols, hits){
-  const host = $("vipCasinoReels");
-  if (!host) return;
-  host.innerHTML = symbols.map((s, i) =>
-    `<div class="vcReel ${hits && hits.includes(i) ? "hit" : ""}">${s ? s.emoji : "❔"}</div>`).join("");
-}
-function renderStats(){
-  const st = $("vipCasinoStats");
-  if (!st) return;
-  const streakText = S.streak > 0 ? `${S.streak} win${S.streak>1?"s":""} 🔥`
-    : S.streak < 0 ? `${Math.abs(S.streak)} loss${Math.abs(S.streak)>1?"es":""} 🥀` : "—";
-  st.innerHTML = `
-    <div class="vcStat"><small>SPINS</small><b>${S.spins}</b></div>
-    <div class="vcStat"><small>WINS</small><b>${S.wins}</b></div>
-    <div class="vcStat"><small>LOSSES</small><b>${S.losses}</b></div>
-    <div class="vcStat"><small>BIGGEST WIN</small><b>${S.biggestWin}</b></div>
-    <div class="vcStat"><small>CURRENT STREAK</small><b>${streakText}</b></div>
-    <div class="vcStat"><small>TOTAL WON</small><b>${S.totalWon} MB</b></div>`;
-}
-function renderAchievements(){
-  const host = $("vipCasinoAchievements");
-  if (!host) return;
-  host.innerHTML = ACHIEVEMENTS.map(a => `
-    <div class="vcAch ${S.achievements[a.id] ? "done" : ""}">
-      <b>${a.emoji} ${a.name}</b>
-      <small>${a.desc}</small>
-    </div>`).join("");
-}
-function renderPaytable(){
-  const t = $("vipCasinoPaytable");
-  if (!t) return;
-  t.innerHTML = `<tr><th>Symbol</th><th>3 of a kind</th><th>5 of a kind</th></tr>` +
-    SYMBOLS.slice().reverse().map(s =>
-      `<tr><td>${s.emoji} ${s.name}</td><td>${typeof s.pay3 === "number" ? "×" + s.pay3 : s.pay3}</td><td>${typeof s.pay5 === "number" ? "×" + s.pay5 : s.pay5}</td></tr>`).join("");
-}
-function render(){
-  if (!$("vipCasino")) return;
-  $("vipCasinoChips").textContent = S.chips;
-  $("vipCasinoWallet").textContent = wallet();
-  $("vipCasinoJackpotValue").textContent = `${Math.floor(S.jackpot)} chips`;
-  $("vipCasinoJackpotHits").textContent = `Jackpots hit: ${S.jackpotsHit} · VIP jackpots: ${S.vipJackpotsHit}`;
-  $("vipCasinoSpin").disabled = busy || S.chips < bet;
-  $("vipCasinoCashOut").disabled = busy || S.chips <= 0;
-  renderStats(); renderAchievements(); renderPaytable();
-}
-function say(headline, talk){
-  const host = $("vipCasinoResult");
-  if (!host) return;
-  host.innerHTML = `<div class="vcPayout">${headline}</div><div class="vcTalk">${talk}</div>`;
-}
-
-/* ---------- Chips ---------- */
-function buyChips(n){
-  if (wallet() < n){ say(`😭 Not enough Micky Bucs — you need ${n} MB.`, "Mikael: go do a job, tycoon."); return; }
-  setWallet(wallet() - n);
-  S.chips += n; save(); render();
-  say(`💎 ${n} VIP chips loaded.`, "Mikael: the chips are shiny. Please don't eat them.");
-}
-function cashOut(){
-  if (S.chips <= 0) return;
-  const n = S.chips;
-  S.chips = 0; save();
-  setWallet(wallet() + n); render();
-  say(`💵 Cashed out ${n} chips → ${n} MB.`, "Mikael: walking away while ahead? Who ARE you.");
-}
-
-/* ---------- Spin ---------- */
-function evaluate(symbols){
-  const counts = {};
-  symbols.forEach(s => { counts[s.id] = (counts[s.id] || 0) + 1; });
-  let bestId = null, bestCount = 0;
-  Object.entries(counts).forEach(([id, c]) => { if (c > bestCount){ bestCount = c; bestId = id; } });
-  const sym = SYMBOLS.find(s => s.id === bestId);
-  const hits = symbols.map((s, i) => s.id === bestId ? i : -1).filter(i => i >= 0);
-
-  // Jackpots
-  if (bestId === "diamond" && mode === 5 && bestCount === 5) return { kind:"vipJackpot", sym, hits };
-  if (bestId === "diamond" && bestCount >= 3) return { kind:"jackpot", sym, hits };
-
-  if (bestCount >= 3){
-    let mult;
-    if (mode === 5){
-      mult = bestCount === 5 ? Number(sym.pay5) : bestCount === 4 ? Number(sym.pay3) * 2 : Number(sym.pay3);
-    } else {
-      mult = Number(sym.pay3);
-    }
-    return { kind: mult >= 18 ? "big" : "win", payout: bet * mult, mult, sym, hits, count:bestCount };
-  }
-  if (bestCount === 2) return { kind:"small", payout: bet, sym, hits, count:2 };
-  return { kind:"loss", sym, hits:[] };
-}
-
-function spin(){
-  if (busy) return;
-  if (S.chips < bet){ say("😭 Not enough chips for that bet.", "Mikael: buy chips, then be reckless. In that order."); return; }
-  busy = true;
-  S.chips -= bet;
-  S.totalWagered += bet;
-  S.jackpot += bet * 0.05;
-  save(); render();
-
-  const count = mode;
-  const reels = Array.from({ length:count }, () => spinSymbol());
-  const host = $("vipCasinoReels");
-  host.innerHTML = Array.from({ length:count }, () => `<div class="vcReel spinning">🎰</div>`).join("");
-  say("Spinning…", "Mikael: hold your breath, it's more dramatic.");
-
-  let shown = 0;
-  const tick = setInterval(() => {
-    shown++;
-    const partial = reels.slice(0, shown);
-    host.innerHTML = partial.map(s => `<div class="vcReel">${s.emoji}</div>`).join("") +
-      Array.from({ length: count - shown }, () => `<div class="vcReel spinning">🎰</div>`).join("");
-    if (shown >= count){
-      clearInterval(tick);
-      setTimeout(() => settle(reels), 260);
-    }
-  }, 420);
-}
-
-function settle(reels){
-  const r = evaluate(reels);
-  renderReels(reels, r.hits);
-  S.spins++;
-
-  if (r.kind === "loss"){
-    S.losses++;
-    S.streak = S.streak > 0 ? -1 : S.streak - 1;
-    say(`🥀 No match. −${bet} chip${bet>1?"s":""}.`, S.streak <= -3 ? pick(STREAK_LOSS_LINES) : pick(LOSS_LINES));
-  } else {
-    let payout = 0, headline = "", talk = "";
-    if (r.kind === "vipJackpot"){
-      payout = Math.floor(S.jackpot) + 500;
-      S.jackpot = 250; S.vipJackpotsHit++; S.jackpotsHit++;
-      headline = `💎 VIP JACKPOT!!! +${payout} chips`;
-      talk = pick(VIP_JACKPOT_LINES);
-      notify("💎 VIP CASINO — VIP JACKPOT", "Rare VIP jackpot hit", `Payout: ${payout} chips`, { amount:payout });
-    } else if (r.kind === "jackpot"){
-      payout = Math.floor(S.jackpot);
-      S.jackpot = 250; S.jackpotsHit++;
-      headline = `🏆 JACKPOT! +${payout} chips`;
-      talk = pick(JACKPOT_LINES);
-      notify("🏆 VIP CASINO — JACKPOT", "Jackpot hit", `Payout: ${payout} chips`, { amount:payout });
-    } else if (r.kind === "big"){
-      payout = r.payout;
-      headline = `🌟 BIG WIN — ${r.count}× ${r.sym.emoji} ${r.sym.name} · +${payout} chips`;
-      talk = pick(BIG_WIN_LINES);
-      notify("🌟 VIP CASINO BIG WIN", `${r.sym.name} ×${r.count}`, `Payout: ${payout} chips`, { amount:payout });
-    } else if (r.kind === "win"){
-      payout = r.payout;
-      headline = `✨ WIN — ${r.count}× ${r.sym.emoji} ${r.sym.name} · +${payout} chips`;
-      talk = pick(WIN_LINES);
-    } else {
-      payout = r.payout;
-      headline = `🙂 Small win — pair of ${r.sym.emoji} · +${payout} chip${payout>1?"s":""}`;
-      talk = pick(WIN_LINES);
-    }
-    S.chips += payout;
-    S.wins++;
-    S.totalWon += payout;
-    S.biggestWin = Math.max(S.biggestWin, payout);
-    S.streak = S.streak < 0 ? 1 : S.streak + 1;
-    S.bestStreak = Math.max(S.bestStreak, S.streak);
-    say(headline, talk);
-    if (typeof confetti === "function" && payout >= bet * 10) confetti({ particleCount:100, spread:95, origin:{ y:.72 } });
-  }
-
-  save();
-  busy = false;
-  render();
-  checkAchievements();
-  renderAchievements();
-}
-
-/* ---------- Wiring ---------- */
-function bind(){
-  if (bound) return;
-  bound = true;
-  $("vipCasinoBuy10")?.addEventListener("click", () => buyChips(10));
-  $("vipCasinoBuy50")?.addEventListener("click", () => buyChips(50));
-  $("vipCasinoCashOut")?.addEventListener("click", cashOut);
-  $("vipCasinoSpin")?.addEventListener("click", spin);
-  $("vipCasinoMode")?.querySelectorAll("[data-mode]").forEach(b => b.addEventListener("click", () => {
-    mode = Number(b.dataset.mode);
-    $("vipCasinoMode").querySelectorAll("[data-mode]").forEach(x => x.classList.toggle("active", x === b));
-    renderReels(Array.from({ length:mode }, () => null));
-    say(mode === 5 ? "5-Reel VIP machine loaded." : "3-Reel Classic loaded.",
-        mode === 5 ? "Mikael: bigger reels, bigger drama." : "Mikael: classic. Like me.");
-  }));
-  $("vipCasinoBets")?.querySelectorAll("[data-bet]").forEach(b => b.addEventListener("click", () => {
-    bet = Number(b.dataset.bet);
-    $("vipCasinoBets").querySelectorAll("[data-bet]").forEach(x => x.classList.toggle("active", x === b));
-    render();
-  }));
-}
-
-function boot(){
+function init(){
   injectStyles();
-  injectMarkup();
-  if (!$("vipCasino")) return;
-  bind();
-  renderReels([null, null, null]);
-  render();
-  checkAchievements();
+  $("vipFolderCasinoBtn")?.addEventListener("click",openCasino);
+  $("vipCasinoClose")?.addEventListener("click",closeCasino);
+  $("vipCasinoCloseBtn")?.addEventListener("click",closeCasino);
+  window.addEventListener("lizzyStoreRefresh",()=>{if(!$("vipCasinoWindow")?.classList.contains("hidden"))renderHeader();if($("vcJackpotTeaserAmt"))$("vcJackpotTeaserAmt").textContent=loadJackpot()});
+  if($("vcJackpotTeaserAmt"))$("vcJackpotTeaserAmt").textContent=loadJackpot();
 }
 
-function start(){
-  boot();
-  // The VIP folder view is created/revealed by vip-folder.js; keep trying briefly
-  // and re-sync whenever the folder or wallet changes.
-  let tries = 0;
-  const t = setInterval(() => { boot(); if (++tries > 20 || $("vipCasino")) clearInterval(t); }, 500);
-  $("vipFolderIcon")?.addEventListener("click", () => setTimeout(boot, 60));
-  $("vipFolderUnlockBtn")?.addEventListener("click", () => setTimeout(boot, 120));
-  ["lizzyStoreRefresh", "focus"].forEach(ev => window.addEventListener(ev, render));
-  window.addEventListener("storage", e => { if (e.key === STATE || e.key === WALLET){ S = Object.assign(defaultState(), read(STATE, {})); render(); } });
-  window.LizzyVipCasino = { state: () => S, render, achievements: ACHIEVEMENTS };
-}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 
-if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
-else start();
+window.VipCasinoApp={open:openCasino,close:closeCasino,stats:loadStats,jackpot:loadJackpot};
 })();
