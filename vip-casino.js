@@ -30,8 +30,8 @@ function notify(title,body,extra){
 }
 
 /* ---------- stats + progressive jackpot ---------- */
-function defaultStats(){return{spins:0,wins:0,losses:0,totalWagered:0,totalWon:0,biggestWin:0,streakType:null,streakCount:0,bestWinStreak:0,bestLossStreak:0,jackpots:0,rareJackpots:0,achievements:{}}}
-function loadStats(){const s=read(STATS_KEY,null);return s?{...defaultStats(),...s,achievements:{...(s.achievements||{})}}:defaultStats()}
+function defaultStats(){return{spins:0,wins:0,losses:0,totalWagered:0,totalWon:0,biggestWin:0,streakType:null,streakCount:0,bestWinStreak:0,bestLossStreak:0,jackpots:0,rareJackpots:0,straightWins:0,achievements:{},spinsByMode:{classic:0,deluxe:0,roulette:0}}}
+function loadStats(){const s=read(STATS_KEY,null);return s?{...defaultStats(),...s,achievements:{...(s.achievements||{})},spinsByMode:{...defaultStats().spinsByMode,...(s.spinsByMode||{})}}:defaultStats()}
 function saveStats(s){write(STATS_KEY,s)}
 function loadJackpot(){const j=Number(localStorage.getItem(JACKPOT_KEY));return Number.isFinite(j)&&j>0?j:JACKPOT_BASE}
 function saveJackpot(n){localStorage.setItem(JACKPOT_KEY,String(Math.max(JACKPOT_BASE,Math.round(n))))}
@@ -46,6 +46,8 @@ const ACHIEVEMENTS=[
  {id:"unlucky_love",emoji:"😭",title:"Unlucky In Love",desc:"Lose 10 spins in a row and keep smiling.",flavor:"Ten losses in a row and you're still here. That's either dedication or a problem, and I choose to call it dedication.",check:s=>s.bestLossStreak>=10},
  {id:"regular",emoji:"🎡",title:"Casino Regular",desc:"Play 50 spins.",flavor:"50 spins deep. The VIP Casino knows your name now.",check:s=>s.spins>=50},
  {id:"big_spender",emoji:"💰",title:"Big Spender",desc:"Wager 2,000 MB total, lifetime.",flavor:"2,000 MB wagered lifetime. Respect the commitment, question the budgeting.",check:s=>s.totalWagered>=2000},
+ {id:"wheel_spinner",emoji:"🎡",title:"Wheel Spinner",desc:"Play 20 Roulette spins.",flavor:"20 spins on the wheel. The table knows you by name now.",check:s=>(s.spinsByMode?.roulette||0)>=20},
+ {id:"straight_shooter",emoji:"🎯",title:"Dead Centre",desc:"Hit a straight-up number in Roulette.",flavor:"You called a single number out of 37 and it landed. I have questions about your luck in general.",check:s=>s.straightWins>=1},
 ];
 
 /* ---------- commentary — written like Mikael narrating live ---------- */
@@ -100,6 +102,32 @@ const LINES={
   "New VIP Casino achievement unlocked. I'm updating your file accordingly.",
  ],
 };
+const ROULETTE_LINES={
+ loss:[
+  "The ball drops, bounces around like it can't commit to a decision, and lands on nothing you bet on. Relatable.",
+  "Wrong number. The wheel has spoken, and unlike me, it does not care about your feelings.",
+  "Nope. Not your colour, not your number, not your night, apparently.",
+  "The ball landed somewhere you definitely didn't call. I'd say better luck next spin, but I make no promises.",
+  "That's a miss. The table remains undefeated.",
+  "No dice — well, no ball, technically. Still a loss.",
+ ],
+ small:[
+  "Even money pays out. Not dramatic, just correct. I respect efficiency.",
+  "That covered half the wheel and it still worked. Solid, unglamorous, effective.",
+  "Small win on the outside bet. Very 'minimum wage energy' but I'll allow it.",
+  "You doubled your bet. Nobody's writing songs about it, but nobody's mad either.",
+ ],
+ big:[
+  "Dozen/column hit! Three-to-one payout, and suddenly you look like you know what you're doing.",
+  "That's a proper roulette win. I'm mildly suspicious of how calm you're being about it.",
+  "Big payout on the outside bet. The table is starting to fear you, as it should.",
+ ],
+ jackpot:[
+  "STRAIGHT UP HIT. One number out of thirty-seven and you called it. I need a minute.",
+  "The ball landed EXACTLY where you put your chip. Out of 37 numbers. I'm actually shaken.",
+  "Single-number hit at 35 to 1. That's not luck, that's a personal vendetta against the house.",
+ ],
+};
 function pick(a){return a[Math.floor(Math.random()*a.length)]}
 
 /* ---------- symbols & paytables ---------- */
@@ -151,8 +179,40 @@ function spin5(bet){
   return{reels,symbol:target,mult,tier:rare?"rare":mult>=50?"jackpot":mult>=10?"big":"small"};
 }
 
+// 🎡 Roulette — single-zero European wheel
+const ROULETTE_ORDER=[0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
+const RED_NUMBERS=new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+function colorOf(n){return n===0?"green":RED_NUMBERS.has(n)?"red":"black"}
+function spinRoulette(){
+  const idx=Math.floor(Math.random()*ROULETTE_ORDER.length);
+  const number=ROULETTE_ORDER[idx];
+  return{idx,number,color:colorOf(number)};
+}
+// selectedBet shape: {type:"straight"|"color"|"parity"|"range"|"dozen"|"column", value}
+function evaluateRouletteBet(bet,number,color){
+  if(!bet)return{tier:"loss",mult:0,straight:false};
+  if(bet.type==="straight")return number===bet.value?{tier:"jackpot",mult:36,straight:true}:{tier:"loss",mult:0,straight:false};
+  if(number===0)return{tier:"loss",mult:0,straight:false}; // 0 loses every outside bet
+  if(bet.type==="color")return color===bet.value?{tier:"small",mult:2,straight:false}:{tier:"loss",mult:0,straight:false};
+  if(bet.type==="parity"){const p=number%2===0?"even":"odd";return p===bet.value?{tier:"small",mult:2,straight:false}:{tier:"loss",mult:0,straight:false}}
+  if(bet.type==="range"){const r=number<=18?"low":"high";return r===bet.value?{tier:"small",mult:2,straight:false}:{tier:"loss",mult:0,straight:false}}
+  if(bet.type==="dozen"){const d=Math.ceil(number/12);return d===bet.value?{tier:"big",mult:3,straight:false}:{tier:"loss",mult:0,straight:false}}
+  if(bet.type==="column"){const c=((number-1)%3)+1;return c===bet.value?{tier:"big",mult:3,straight:false}:{tier:"loss",mult:0,straight:false}}
+  return{tier:"loss",mult:0,straight:false};
+}
+function betLabel(bet){
+  if(!bet)return"No bet selected";
+  if(bet.type==="straight")return`Straight Up: ${bet.value}`;
+  if(bet.type==="color")return bet.value==="red"?"Red":"Black";
+  if(bet.type==="parity")return bet.value==="odd"?"Odd":"Even";
+  if(bet.type==="range")return bet.value==="low"?"1–18":"19–36";
+  if(bet.type==="dozen")return`${["","1st","2nd","3rd"][bet.value]} 12 (${bet.value===1?"1-12":bet.value===2?"13-24":"25-36"})`;
+  if(bet.type==="column")return`Column ${bet.value}`;
+  return"No bet selected";
+}
+
 /* ---------- state ---------- */
-let currentTab="classic",betAmt=10;
+let currentTab="classic",betAmt=10,rouletteBet=null,rouletteSpinning=false;
 const BET_STEPS=[5,10,25,50,100];
 
 function streakLabel(s){
@@ -160,9 +220,10 @@ function streakLabel(s){
   return s.streakType==="win"?`🔥 ${s.streakCount} win streak`:`🥶 ${s.streakCount} loss streak`;
 }
 
-function applyOutcome(bet,out){
+function applyOutcome(mode,bet,out){
   const s=loadStats();let jackpot=loadJackpot();
   s.spins++;s.totalWagered+=bet;
+  s.spinsByMode[mode]=(s.spinsByMode[mode]||0)+1;
   jackpot+=Math.max(1,Math.round(bet*JACKPOT_GROWTH));
   let payout=0,wonJackpotPool=false;
   if(out.tier==="rare"){
@@ -179,6 +240,7 @@ function applyOutcome(bet,out){
   const prevStreakType=s.streakType,prevStreakCount=s.streakCount;
   if(payout>0){
     s.wins++;s.totalWon+=payout;
+    if(out.straight)s.straightWins=(s.straightWins||0)+1;
     if(payout>s.biggestWin)s.biggestWin=payout;
     s.streakType="win";
     s.streakCount=prevStreakType==="win"?prevStreakCount+1:1;
@@ -229,6 +291,54 @@ function paytable5(){
   <tr><td colspan="4">⭐ Wild substitutes for any symbol in the match.</td></tr></table>`;
 }
 
+function buildWheelGradient(){
+  const seg=360/ROULETTE_ORDER.length;
+  const stops=ROULETTE_ORDER.map((n,i)=>{
+    const c=colorOf(n)==="red"?"#c1272d":colorOf(n)==="black"?"#141414":"#2e7d32";
+    return `${c} ${(i*seg).toFixed(3)}deg ${((i+1)*seg).toFixed(3)}deg`;
+  });
+  return `conic-gradient(from 0deg, ${stops.join(",")})`;
+}
+function numberGridHtml(){
+  return `<div class="vcRouletteGrid">${Array.from({length:37},(_,n)=>n).map(n=>{
+    const active=rouletteBet&&rouletteBet.type==="straight"&&rouletteBet.value===n?" active":"";
+    return `<button type="button" class="vcNumBtn vcNum-${colorOf(n)}${active}" data-bet-type="straight" data-bet-value="${n}">${n}</button>`;
+  }).join("")}</div>`;
+}
+function outsideBetsHtml(){
+  const b=(type,value,label,cls)=>{
+    const active=rouletteBet&&rouletteBet.type===type&&String(rouletteBet.value)===String(value)?" active":"";
+    return `<button type="button" class="vcOutBtn ${cls||""}${active}" data-bet-type="${type}" data-bet-value="${value}">${label}</button>`;
+  };
+  return `<div class="vcOutsideBets">
+    ${b("dozen",1,"1st 12")}${b("dozen",2,"2nd 12")}${b("dozen",3,"3rd 12")}
+    ${b("column",1,"Col 1")}${b("column",2,"Col 2")}${b("column",3,"Col 3")}
+    ${b("range","low","1–18")}${b("parity","even","Even")}${b("color","red","Red","vcOutRed")}${b("color","black","Black","vcOutBlack")}${b("parity","odd","Odd")}${b("range","high","19–36")}
+  </div>`;
+}
+function rouletteOdds(){
+  return `<table class="vcPayTable"><tr><th>Bet</th><th>Pays</th><th>Odds</th></tr>
+  <tr><td>Straight Up (single number)</td><td>36× (35 to 1)</td><td>1 in 37</td></tr>
+  <tr><td>Dozen (1st/2nd/3rd 12) or Column</td><td>3× (2 to 1)</td><td>12 in 37</td></tr>
+  <tr><td>Red/Black, Odd/Even, 1–18/19–36</td><td>2× (even money)</td><td>18 in 37</td></tr>
+  <tr><td colspan="3">0 is green and loses every bet except a straight bet placed on 0 itself.</td></tr></table>`;
+}
+function rouletteHtml(){
+  return `<div class="vcMachine vcRouletteMachine">
+    <div class="vcWheelWrap">
+      <div class="vcWheelPointer">▼</div>
+      <div class="vcWheel" id="vcWheel" style="background:${buildWheelGradient()}"></div>
+    </div>
+    <div class="vcResultLine" id="vcResultR">Pick a bet, then spin the wheel.</div>
+    <div class="vcBetSelected">Betting on: <b id="vcBetLabel">${esc(betLabel(rouletteBet))}</b></div>
+    <div class="vcRouletteGridWrap">${numberGridHtml()}</div>
+    ${outsideBetsHtml()}
+    <div class="vcBetRow"><span>Bet:</span>${chipRow("vcBetChipsR")}<div class="vcCurrentBet">Selected: <b id="vcBetAmtR">${betAmt}</b> MB</div></div>
+    <button type="button" class="vcSpinBtn" id="vcSpinR">🎡 SPIN THE WHEEL</button>
+    <details class="vcPaytable"><summary>Odds &amp; Payouts</summary>${rouletteOdds()}</details>
+  </div>`;
+}
+
 function machineHtml(mode){
   const is3=mode==="classic";
   return `<div class="vcMachine">
@@ -256,6 +366,8 @@ function howtoHtml(){
     <p>Pick a bet, hit spin, and three symbols land. Match all three for a payout based on the paytable below — the rarer the symbol, the bigger the multiplier. Landing two of 🍒 🍋 or 🌷 pays a small 1× consolation. Three 👑 Crowns triggers the RARE VIP JACKPOT.</p>
     <h3>✨ 5-Reel Deluxe</h3>
     <p>Five symbols land in a row. Matching starts from the leftmost reel: whatever lands there (or the first non-Wild symbol) is your target, and the match extends right for as long as reels keep matching it or land a ⭐ Wild. 3, 4, or 5 in a row pays out — check the paytable for each symbol. Landing all 5 reels on 👑 Crown triggers the RARE VIP JACKPOT.</p>
+    <h3>🎡 Roulette</h3>
+    <p>A single-zero European wheel — 37 pockets (0–36). Pick a bet before you spin: a straight-up number pays 36× (odds 1 in 37), a Dozen or Column pays 3×, and the even-money outside bets (Red/Black, Odd/Even, 1–18/19–36) pay 2×. Green 0 loses every outside bet, and only wins if you bet straight-up on 0 itself. Tap a number or an outside bet to select it — your current selection is shown above the board — then spin.</p>
     <h3>👑 Jackpots</h3>
     <p>A regular JACKPOT (💎💎💎 on Classic, or a big enough Diamond/Crown run on Deluxe) pays straight off the paytable. The RARE VIP JACKPOT is different — it pays out the full Progressive Jackpot pool shown at the top, which grows a little with every single spin across both machines. Win it, and the pool resets to 500 MB and starts climbing again.</p>
     <h3>📊 Stats, Streaks &amp; Achievements</h3>
@@ -279,6 +391,7 @@ function renderTabBody(){
   const host=$("vcTabBody");if(!host)return;
   if(currentTab==="classic")host.innerHTML=machineHtml("classic");
   else if(currentTab==="deluxe")host.innerHTML=machineHtml("deluxe");
+  else if(currentTab==="roulette")host.innerHTML=rouletteHtml();
   else if(currentTab==="achievements")host.innerHTML=achievementsHtml();
   else host.innerHTML=howtoHtml();
   wireTabBody();
@@ -289,9 +402,21 @@ function wireTabBody(){
     betAmt=b.dataset.bet==="max"?Math.max(1,Math.min(wallet(),500)):Number(b.dataset.bet);
     if($("vcBetAmt3"))$("vcBetAmt3").textContent=betAmt;
     if($("vcBetAmt5"))$("vcBetAmt5").textContent=betAmt;
+    if($("vcBetAmtR"))$("vcBetAmtR").textContent=betAmt;
   }));
   $("vcSpin3")?.addEventListener("click",()=>doSpin("classic"));
   $("vcSpin5")?.addEventListener("click",()=>doSpin("deluxe"));
+  $("vcSpinR")?.addEventListener("click",doRouletteSpin);
+  document.querySelectorAll("[data-bet-type]").forEach(b=>b.addEventListener("click",()=>{
+    if(rouletteSpinning)return;
+    const type=b.dataset.betType;
+    const raw=b.dataset.betValue;
+    const value=(type==="straight"||type==="dozen"||type==="column")?Number(raw):raw;
+    rouletteBet={type,value};
+    document.querySelectorAll("[data-bet-type]").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(`[data-bet-type="${type}"][data-bet-value="${raw}"]`).forEach(x=>x.classList.add("active"));
+    if($("vcBetLabel"))$("vcBetLabel").textContent=betLabel(rouletteBet);
+  }));
 }
 
 function renderRoot(){
@@ -310,6 +435,7 @@ function renderRoot(){
     <div class="vcTabs">
       <button type="button" class="vcTabBtn ${currentTab==="classic"?"active":""}" data-tab="classic">🎰 Classic 3-Reel</button>
       <button type="button" class="vcTabBtn ${currentTab==="deluxe"?"active":""}" data-tab="deluxe">✨ Deluxe 5-Reel</button>
+      <button type="button" class="vcTabBtn ${currentTab==="roulette"?"active":""}" data-tab="roulette">🎡 Roulette</button>
       <button type="button" class="vcTabBtn ${currentTab==="achievements"?"active":""}" data-tab="achievements">🏆 Achievements</button>
       <button type="button" class="vcTabBtn ${currentTab==="howto"?"active":""}" data-tab="howto">ℹ️ How To Play</button>
     </div>
@@ -366,7 +492,7 @@ function doSpin(mode){
       const out=mode==="classic"?spin3(betAmt):spin5(betAmt);
       cells.forEach((c,i)=>c.textContent=out.reels[i]);
       cells.forEach(c=>{c.classList.remove("vcPulse");void c.offsetWidth;c.classList.add("vcPulse")});
-      const res=applyOutcome(betAmt,out);
+      const res=applyOutcome(mode,betAmt,out);
       resultEl.innerHTML=out.tier==="loss"
         ? `😔 ${esc(pick(LINES.loss))}`
         : `<b>+${res.payout} MB</b> — ${esc(pick(LINES[out.tier]))}`;
@@ -386,6 +512,52 @@ function doSpin(mode){
       btn.disabled=false;
     }
   },70);
+}
+
+function doRouletteSpin(){
+  if(!unlocked())return;
+  const btn=$("vcSpinR");if(!btn||btn.disabled)return;
+  const resultEl=$("vcResultR");
+  if(!rouletteBet){resultEl.textContent="Pick a bet first — a number, or one of the red/black/odd/even/dozen/column bets below.";return}
+  if(wallet()<betAmt){resultEl.textContent=`😭 ${pick(LINES.broke)}`;return}
+  btn.disabled=true;rouletteSpinning=true;
+  setWallet(wallet()-betAmt);
+  renderHeader();
+  const wheelEl=$("vcWheel");
+  const{idx,number,color}=spinRoulette();
+  const seg=360/ROULETTE_ORDER.length;
+  const extraSpins=6+Math.floor(Math.random()*3); // 6–8 full spins for drama
+  const targetDeg=extraSpins*360+(360-(idx*seg+seg/2));
+  if(wheelEl){
+    wheelEl.style.transition="none";
+    wheelEl.style.transform="rotate(0deg)";
+    void wheelEl.offsetWidth;
+    wheelEl.style.transition="transform 3.2s cubic-bezier(.17,.67,.16,1)";
+    wheelEl.style.transform=`rotate(${targetDeg}deg)`;
+  }
+  resultEl.textContent="🎡 Spinning...";
+  setTimeout(()=>{
+    const out=evaluateRouletteBet(rouletteBet,number,color);
+    const res=applyOutcome("roulette",betAmt,out);
+    const colorEmoji=color==="red"?"🔴":color==="black"?"⚫":"🟢";
+    resultEl.innerHTML=out.tier==="loss"
+      ? `Ball landed on <b>${number} ${colorEmoji}</b>. ${esc(pick(ROULETTE_LINES.loss))}`
+      : `Ball landed on <b>${number} ${colorEmoji}</b>. <b>+${res.payout} MB</b> — ${esc(pick(ROULETTE_LINES[out.tier]))}`;
+    if(res.wonJackpotPool)rareOverlay(res.payout);
+    else if(out.tier==="jackpot"&&window.confetti)window.confetti({particleCount:100,spread:90,origin:{y:0.5},colors:["#ffd700","#c1272d","#ffffff"]});
+    else if(out.tier==="big"&&window.confetti)window.confetti({particleCount:50,spread:70,origin:{y:0.6}});
+    res.newlyUnlocked.forEach(a=>{
+      toast(`<b>${a.emoji} ${esc(a.title)}</b><p>${esc(a.flavor)}</p>`,"vcAchToast");
+      notify(`🏆 VIP CASINO ACHIEVEMENT — ${a.title}`,a.desc,{achievement:a.id});
+    });
+    if(out.tier!=="loss"){
+      notify(`🎡 VIP CASINO ROULETTE ${out.tier==="jackpot"?"STRAIGHT-UP WIN":"WIN"}`,
+        `Bet: ${betLabel(rouletteBet)}\nWager: ${betAmt} MB\nWinning number: ${number} (${color})\nPayout: +${res.payout} MB\nBalance: ${wallet()} MB`,
+        {bet:betLabel(rouletteBet),wager:betAmt,number,color,payout:res.payout,balance:wallet()});
+    }
+    renderHeader();
+    btn.disabled=false;rouletteSpinning=false;
+  },3300);
 }
 
 /* ---------- open/close ---------- */
@@ -449,6 +621,25 @@ function injectStyles(){
   .vcPaytable summary{cursor:pointer;color:#ffd700;font-weight:800}
   .vcPayTable{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px}
   .vcPayTable td,.vcPayTable th{padding:6px 8px;border-bottom:1px solid #ffffff14;text-align:left}
+
+  .vcRouletteMachine{padding-top:26px}
+  .vcWheelWrap{position:relative;display:flex;justify-content:center;margin-bottom:16px}
+  .vcWheelPointer{position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:22px;color:#ffd700;text-shadow:0 0 10px #f4c43099;z-index:2}
+  .vcWheel{width:200px;height:200px;border-radius:50%;border:6px solid #f4c430;box-shadow:0 0 0 3px #150a22,0 0 40px #f4c43055,inset 0 0 30px #000000aa;position:relative}
+  .vcWheel::after{content:"";position:absolute;inset:38%;border-radius:50%;background:radial-gradient(circle at 35% 30%,#3a1d5c,#150a22);border:2px solid #ffd70099}
+  .vcBetSelected{margin-bottom:10px;font-size:13px;color:#e8dcff}
+  .vcBetSelected b{color:#ffd700}
+  .vcRouletteGridWrap{overflow-x:auto;margin-bottom:12px}
+  .vcRouletteGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(34px,1fr));gap:4px;min-width:380px}
+  .vcNumBtn{height:34px;border-radius:8px;border:1px solid #ffffff22;font-weight:800;font-size:12px;cursor:pointer;color:#fff}
+  .vcNum-red{background:#c1272d}
+  .vcNum-black{background:#141414}
+  .vcNum-green{background:#2e7d32}
+  .vcNumBtn.active,.vcOutBtn.active{outline:3px solid #ffd700;outline-offset:1px}
+  .vcOutsideBets{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:14px}
+  .vcOutBtn{padding:9px 12px;border-radius:10px;border:1px solid #f4c43033;background:#ffffff0d;color:#f4ecff;font-weight:800;font-size:12px;cursor:pointer}
+  .vcOutRed{background:#c1272d55;border-color:#c1272d}
+  .vcOutBlack{background:#14141477;border-color:#ffffff33}
 
   .vcAchGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
   .vcAchCard{padding:12px;border-radius:14px;text-align:center;border:1px solid #ffffff14;background:#ffffff08}

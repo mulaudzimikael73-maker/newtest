@@ -1821,9 +1821,22 @@ if (window.netlifyIdentity) {
    </div>
    <div id="vipFolderUnlockedView" class="hidden">
      <p class="memoryMessage">💎 Welcome to VIP. More exclusive features are coming soon.</p>
+     <div class="vcTeaser">
+       <div class="vcTeaserTop"><span>🎰</span><div><small>VIP EXCLUSIVE</small><h3>VIP Casino</h3></div></div>
+       <p>Chips, streaks, and a jackpot that never stops growing — with Mikael narrating every spin.</p>
+       <div class="vcJackpotTeaser">👑 Progressive Jackpot: <b id="vcJackpotTeaserAmt">500</b> MB</div>
+       <button type="button" id="vipFolderCasinoBtn">🎰 ENTER VIP CASINO</button>
+     </div>
    </div>
  </div>
  <button class="windowCloseButton" id="vipFolderCloseBtn">Close</button>
+</div>
+
+<!-- ===== VIP CASINO: lives inside the VIP folder ===== -->
+<div id="vipCasinoWindow" class="desktopWindow hidden vcWindow">
+ <div class="windowTop"><div class="windowDots"><span class="windowCloseDot" id="vipCasinoClose"></span><span class="windowMinDot"></span><span class="windowMaxDot"></span></div><h2>🎰 VIP Casino</h2></div>
+ <div class="windowScroll" id="vcRoot"></div>
+ <button class="windowCloseButton" id="vipCasinoCloseBtn">Close</button>
 </div>
 
 <div id="irVipActivation" class="irVipActivation hidden">
