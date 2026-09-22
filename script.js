@@ -4212,7 +4212,7 @@ if (typeof lizzyTelegramNotify === "function") window.lizzyTelegramNotify = lizz
  ["mickyBucs","lizzyMickyBucs","mickyBucsBalance","lizzyBankBalance"].forEach(k=>{if(localStorage.getItem(k)!==null)localStorage.setItem(k,String(n))});
  document.querySelectorAll("[data-micky-bucs-balance],#mickyBucsBalance,#bankBalance,#lizzyBankBalance").forEach(el=>el.textContent=String(n));
  window.dispatchEvent(new CustomEvent("mickyBucsBalanceChanged",{detail:{balance:n,source:"cloudflare"}}))}
- async function sync(){const e=endpoint();if(!e)return;try{const r=await fetch(e+(e.includes("?")?"&":"?")+"action=micky_bucs_balance",{cache:"no-store"}),d=await r.json();if(r.ok&&d.success)apply(d.balance)}catch(e){console.warn("Bank sync failed",e)}}
+ async function sync(){if(document.hidden)return;const e=endpoint();if(!e)return;try{const r=await fetch(e+(e.includes("?")?"&":"?")+"action=micky_bucs_balance",{cache:"no-store"}),d=await r.json();if(r.ok&&d.success)apply(d.balance)}catch(e){console.warn("Bank sync failed",e)}}
  window.syncMickyBucsFromServer=sync;window.addEventListener("load",()=>setTimeout(sync,800));window.addEventListener("focus",sync);
  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")sync()});setInterval(sync,60000);
 })();
@@ -5411,6 +5411,7 @@ const ANNOY_EFFECTS = {
 // ---- delivery loop ----
 let lastFiredAt = null;
 async function checkAnnoy() {
+  if (document.hidden) return;
   try {
     const d = await annoyApi("annoy_state");
     if (d.pending && d.pending.createdAt !== lastFiredAt && ANNOY_EFFECTS[d.pending.effect]) {
@@ -5444,6 +5445,7 @@ function injectStopButton() {
 document.addEventListener("DOMContentLoaded", () => {
   injectStopButton();
   checkAnnoy();
-  setInterval(checkAnnoy, 6000);
+  setInterval(checkAnnoy, 20000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) checkAnnoy(); });
 });
 })();

@@ -14,7 +14,7 @@ async function mikaelMood(){const r=await fetch(WORKER+"?mikaelMood=1",{cache:"n
 function ensureMsgUI(){if(document.getElementById("mikaelMessagePopup"))return;const e=document.createElement("div");e.id="mikaelMessagePopup";e.style.cssText="position:fixed;left:50%;top:22px;transform:translate(-50%,-140%);z-index:100010;max-width:360px;width:90%;transition:transform .5s ease;font-family:inherit";document.body.appendChild(e)}
 let showing=false;
 async function renderMessages(){
- if(showing)return;
+ if(showing||document.hidden)return;
  ensureMsgUI();
  const box=document.getElementById("mikaelMessagePopup");
  try{
