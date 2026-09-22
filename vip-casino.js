@@ -329,12 +329,13 @@ function rouletteHtml(){
       <div class="vcWheelPointer">▼</div>
       <div class="vcWheel" id="vcWheel" style="background:${buildWheelGradient()}"></div>
     </div>
-    <div class="vcResultLine" id="vcResultR">Pick a bet, then spin the wheel.</div>
+    <div class="vcResultLine" id="vcResultR">Pick a bet below, then spin the wheel.</div>
     <div class="vcBetSelected">Betting on: <b id="vcBetLabel">${esc(betLabel(rouletteBet))}</b></div>
-    <div class="vcRouletteGridWrap">${numberGridHtml()}</div>
-    ${outsideBetsHtml()}
     <div class="vcBetRow"><span>Bet:</span>${chipRow("vcBetChipsR")}<div class="vcCurrentBet">Selected: <b id="vcBetAmtR">${betAmt}</b> MB</div></div>
     <button type="button" class="vcSpinBtn" id="vcSpinR">🎡 SPIN THE WHEEL</button>
+    <div class="vcBoardLabel">Table — tap a number or an outside bet</div>
+    <div class="vcRouletteGridWrap">${numberGridHtml()}</div>
+    ${outsideBetsHtml()}
     <details class="vcPaytable"><summary>Odds &amp; Payouts</summary>${rouletteOdds()}</details>
   </div>`;
 }
@@ -394,29 +395,6 @@ function renderTabBody(){
   else if(currentTab==="roulette")host.innerHTML=rouletteHtml();
   else if(currentTab==="achievements")host.innerHTML=achievementsHtml();
   else host.innerHTML=howtoHtml();
-  wireTabBody();
-}
-
-function wireTabBody(){
-  document.querySelectorAll(".vcChip").forEach(b=>b.addEventListener("click",()=>{
-    betAmt=b.dataset.bet==="max"?Math.max(1,Math.min(wallet(),500)):Number(b.dataset.bet);
-    if($("vcBetAmt3"))$("vcBetAmt3").textContent=betAmt;
-    if($("vcBetAmt5"))$("vcBetAmt5").textContent=betAmt;
-    if($("vcBetAmtR"))$("vcBetAmtR").textContent=betAmt;
-  }));
-  $("vcSpin3")?.addEventListener("click",()=>doSpin("classic"));
-  $("vcSpin5")?.addEventListener("click",()=>doSpin("deluxe"));
-  $("vcSpinR")?.addEventListener("click",doRouletteSpin);
-  document.querySelectorAll("[data-bet-type]").forEach(b=>b.addEventListener("click",()=>{
-    if(rouletteSpinning)return;
-    const type=b.dataset.betType;
-    const raw=b.dataset.betValue;
-    const value=(type==="straight"||type==="dozen"||type==="column")?Number(raw):raw;
-    rouletteBet={type,value};
-    document.querySelectorAll("[data-bet-type]").forEach(x=>x.classList.remove("active"));
-    document.querySelectorAll(`[data-bet-type="${type}"][data-bet-value="${raw}"]`).forEach(x=>x.classList.add("active"));
-    if($("vcBetLabel"))$("vcBetLabel").textContent=betLabel(rouletteBet);
-  }));
 }
 
 function renderRoot(){
@@ -447,6 +425,44 @@ function renderRoot(){
   }));
   renderTabBody();
   renderHeader();
+  bindRootDelegation();
+}
+
+let rootDelegationBound=false;
+function bindRootDelegation(){
+  if(rootDelegationBound)return; // #vcRoot itself is never replaced (only its children), so one listener is enough forever
+  rootDelegationBound=true;
+  const root=$("vcRoot");if(!root)return;
+  root.addEventListener("click",e=>{
+    try{
+      const chip=e.target.closest(".vcChip");
+      if(chip){
+        e.preventDefault();e.stopPropagation();
+        betAmt=chip.dataset.bet==="max"?Math.max(1,Math.min(wallet(),500)):Number(chip.dataset.bet);
+        if($("vcBetAmt3"))$("vcBetAmt3").textContent=betAmt;
+        if($("vcBetAmt5"))$("vcBetAmt5").textContent=betAmt;
+        if($("vcBetAmtR"))$("vcBetAmtR").textContent=betAmt;
+        return;
+      }
+      const betBtn=e.target.closest("[data-bet-type]");
+      if(betBtn){
+        e.preventDefault();e.stopPropagation();
+        if(rouletteSpinning)return;
+        const type=betBtn.dataset.betType,raw=betBtn.dataset.betValue;
+        const value=(type==="straight"||type==="dozen"||type==="column")?Number(raw):raw;
+        rouletteBet={type,value};
+        root.querySelectorAll("[data-bet-type]").forEach(x=>x.classList.remove("active"));
+        root.querySelectorAll(`[data-bet-type="${type}"][data-bet-value="${raw}"]`).forEach(x=>x.classList.add("active"));
+        if($("vcBetLabel"))$("vcBetLabel").textContent=betLabel(rouletteBet);
+        return;
+      }
+      if(e.target.closest("#vcSpin3")){e.preventDefault();e.stopPropagation();doSpin("classic");return}
+      if(e.target.closest("#vcSpin5")){e.preventDefault();e.stopPropagation();doSpin("deluxe");return}
+      if(e.target.closest("#vcSpinR")){e.preventDefault();e.stopPropagation();doRouletteSpin();return}
+    }catch(err){
+      console.error("VIP Casino click handler error:",err);
+    }
+  });
 }
 
 function toast(html,cls){
@@ -489,27 +505,35 @@ function doSpin(mode){
     ticks++;
     if(ticks>=10){
       clearInterval(spinner);
-      const out=mode==="classic"?spin3(betAmt):spin5(betAmt);
-      cells.forEach((c,i)=>c.textContent=out.reels[i]);
-      cells.forEach(c=>{c.classList.remove("vcPulse");void c.offsetWidth;c.classList.add("vcPulse")});
-      const res=applyOutcome(mode,betAmt,out);
-      resultEl.innerHTML=out.tier==="loss"
-        ? `😔 ${esc(pick(LINES.loss))}`
-        : `<b>+${res.payout} MB</b> — ${esc(pick(LINES[out.tier]))}`;
-      if(res.wonJackpotPool)rareOverlay(res.payout);
-      else if(out.tier==="jackpot"&&window.confetti)window.confetti({particleCount:90,spread:80,origin:{y:0.5},colors:["#ffd700","#b388ff","#ffffff"]});
-      else if(out.tier==="big"&&window.confetti)window.confetti({particleCount:50,spread:70,origin:{y:0.6}});
-      res.newlyUnlocked.forEach(a=>{
-        toast(`<b>${a.emoji} ${esc(a.title)}</b><p>${esc(a.flavor)}</p>`,"vcAchToast");
-        notify(`🏆 VIP CASINO ACHIEVEMENT — ${a.title}`,a.desc,{achievement:a.id});
-      });
-      if(out.tier!=="loss"){
-        notify(`🎰 VIP CASINO ${out.tier==="rare"?"RARE JACKPOT":out.tier==="jackpot"?"JACKPOT":"WIN"}`,
-          `Mode: ${mode==="classic"?"3-Reel Classic":"5-Reel Deluxe"}\nBet: ${betAmt} MB\nPayout: +${res.payout} MB\nBalance: ${wallet()} MB`,
-          {mode,bet:betAmt,payout:res.payout,tier:out.tier,balance:wallet()});
+      try{
+        const out=mode==="classic"?spin3(betAmt):spin5(betAmt);
+        cells.forEach((c,i)=>c.textContent=out.reels[i]);
+        cells.forEach(c=>{c.classList.remove("vcPulse");void c.offsetWidth;c.classList.add("vcPulse")});
+        const res=applyOutcome(mode,betAmt,out);
+        resultEl.innerHTML=out.tier==="loss"
+          ? `😔 ${esc(pick(LINES.loss))}`
+          : `<b>+${res.payout} MB</b> — ${esc(pick(LINES[out.tier]))}`;
+        if(res.wonJackpotPool)rareOverlay(res.payout);
+        else if(out.tier==="jackpot"&&window.confetti)window.confetti({particleCount:90,spread:80,origin:{y:0.5},colors:["#ffd700","#b388ff","#ffffff"]});
+        else if(out.tier==="big"&&window.confetti)window.confetti({particleCount:50,spread:70,origin:{y:0.6}});
+        res.newlyUnlocked.forEach(a=>{
+          toast(`<b>${a.emoji} ${esc(a.title)}</b><p>${esc(a.flavor)}</p>`,"vcAchToast");
+          notify(`🏆 VIP CASINO ACHIEVEMENT — ${a.title}`,a.desc,{achievement:a.id});
+        });
+        if(out.tier!=="loss"){
+          notify(`🎰 VIP CASINO ${out.tier==="rare"?"RARE JACKPOT":out.tier==="jackpot"?"JACKPOT":"WIN"}`,
+            `Mode: ${mode==="classic"?"3-Reel Classic":"5-Reel Deluxe"}\nBet: ${betAmt} MB\nPayout: +${res.payout} MB\nBalance: ${wallet()} MB`,
+            {mode,bet:betAmt,payout:res.payout,tier:out.tier,balance:wallet()});
+        }
+        renderHeader();
+      }catch(err){
+        console.error("VIP Casino slot spin error:",err);
+        resultEl.textContent="Something went wrong reading that spin — your bet was refunded.";
+        setWallet(wallet()+betAmt);
+        renderHeader();
+      }finally{
+        btn.disabled=false;
       }
-      renderHeader();
-      btn.disabled=false;
     }
   },70);
 }
@@ -537,26 +561,34 @@ function doRouletteSpin(){
   }
   resultEl.textContent="🎡 Spinning...";
   setTimeout(()=>{
-    const out=evaluateRouletteBet(rouletteBet,number,color);
-    const res=applyOutcome("roulette",betAmt,out);
-    const colorEmoji=color==="red"?"🔴":color==="black"?"⚫":"🟢";
-    resultEl.innerHTML=out.tier==="loss"
-      ? `Ball landed on <b>${number} ${colorEmoji}</b>. ${esc(pick(ROULETTE_LINES.loss))}`
-      : `Ball landed on <b>${number} ${colorEmoji}</b>. <b>+${res.payout} MB</b> — ${esc(pick(ROULETTE_LINES[out.tier]))}`;
-    if(res.wonJackpotPool)rareOverlay(res.payout);
-    else if(out.tier==="jackpot"&&window.confetti)window.confetti({particleCount:100,spread:90,origin:{y:0.5},colors:["#ffd700","#c1272d","#ffffff"]});
-    else if(out.tier==="big"&&window.confetti)window.confetti({particleCount:50,spread:70,origin:{y:0.6}});
-    res.newlyUnlocked.forEach(a=>{
-      toast(`<b>${a.emoji} ${esc(a.title)}</b><p>${esc(a.flavor)}</p>`,"vcAchToast");
-      notify(`🏆 VIP CASINO ACHIEVEMENT — ${a.title}`,a.desc,{achievement:a.id});
-    });
-    if(out.tier!=="loss"){
-      notify(`🎡 VIP CASINO ROULETTE ${out.tier==="jackpot"?"STRAIGHT-UP WIN":"WIN"}`,
-        `Bet: ${betLabel(rouletteBet)}\nWager: ${betAmt} MB\nWinning number: ${number} (${color})\nPayout: +${res.payout} MB\nBalance: ${wallet()} MB`,
-        {bet:betLabel(rouletteBet),wager:betAmt,number,color,payout:res.payout,balance:wallet()});
+    try{
+      const out=evaluateRouletteBet(rouletteBet,number,color);
+      const res=applyOutcome("roulette",betAmt,out);
+      const colorEmoji=color==="red"?"🔴":color==="black"?"⚫":"🟢";
+      resultEl.innerHTML=out.tier==="loss"
+        ? `Ball landed on <b>${number} ${colorEmoji}</b>. ${esc(pick(ROULETTE_LINES.loss))}`
+        : `Ball landed on <b>${number} ${colorEmoji}</b>. <b>+${res.payout} MB</b> — ${esc(pick(ROULETTE_LINES[out.tier]))}`;
+      if(res.wonJackpotPool)rareOverlay(res.payout);
+      else if(out.tier==="jackpot"&&window.confetti)window.confetti({particleCount:100,spread:90,origin:{y:0.5},colors:["#ffd700","#c1272d","#ffffff"]});
+      else if(out.tier==="big"&&window.confetti)window.confetti({particleCount:50,spread:70,origin:{y:0.6}});
+      res.newlyUnlocked.forEach(a=>{
+        toast(`<b>${a.emoji} ${esc(a.title)}</b><p>${esc(a.flavor)}</p>`,"vcAchToast");
+        notify(`🏆 VIP CASINO ACHIEVEMENT — ${a.title}`,a.desc,{achievement:a.id});
+      });
+      if(out.tier!=="loss"){
+        notify(`🎡 VIP CASINO ROULETTE ${out.tier==="jackpot"?"STRAIGHT-UP WIN":"WIN"}`,
+          `Bet: ${betLabel(rouletteBet)}\nWager: ${betAmt} MB\nWinning number: ${number} (${color})\nPayout: +${res.payout} MB\nBalance: ${wallet()} MB`,
+          {bet:betLabel(rouletteBet),wager:betAmt,number,color,payout:res.payout,balance:wallet()});
+      }
+      renderHeader();
+    }catch(err){
+      console.error("VIP Casino roulette spin error:",err);
+      resultEl.textContent="Something went wrong reading that spin — your bet was refunded.";
+      setWallet(wallet()+betAmt);
+      renderHeader();
+    }finally{
+      btn.disabled=false;rouletteSpinning=false;
     }
-    renderHeader();
-    btn.disabled=false;rouletteSpinning=false;
   },3300);
 }
 
@@ -569,6 +601,14 @@ function openCasino(){
 function closeCasino(){$("vipCasinoWindow")?.classList.add("hidden")}
 
 /* ---------- styles (self-contained, no edits to style.css needed) ---------- */
+function injectFont(){
+  if(document.getElementById("vcFont"))return;
+  const link=document.createElement("link");
+  link.id="vcFont";link.rel="stylesheet";
+  link.href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&display=swap";
+  document.head.appendChild(link);
+}
+
 function injectStyles(){
   if($("vcStyles"))return;
   const s=document.createElement("style");
@@ -583,63 +623,84 @@ function injectStyles(){
   .vcJackpotTeaser{margin:10px 0;padding:10px 12px;border-radius:12px;background:#00000040;color:#ffd700;font-weight:800;text-align:center;border:1px dashed #f4c43066}
   #vipFolderCasinoBtn{width:100%;border:0;border-radius:12px;padding:12px;font-weight:900;cursor:pointer;background:linear-gradient(120deg,#f4c430,#b388ff);color:#150a22}
 
-  .vcWindow{background:radial-gradient(circle at 50% -10%,#2a1240,#0a0512 70%)!important;border:1px solid #f4c43055!important;color:#f4ecff}
+  .vcWindow{background:radial-gradient(circle at 50% -10%,#2a1240,#0a0512 70%)!important;border:1px solid #f4c43055!important;color:#f4ecff;width:min(1180px,96vw)!important;max-height:95vh!important}
+  .vcWindow .windowScroll{max-height:calc(95vh - 140px)!important;padding:32px!important}
+  .vcWindow,.vcWindow *{font-family:'Poppins',sans-serif}
+  .vcWindow .windowTop h2,.vcJackpotBig,.vcRareInner h1,.vcTeaserTop h3,.vcBalance{font-family:'Cinzel',serif!important}
   .vcWindow .windowTop{background:linear-gradient(90deg,#1a0f2e,#2c1547);border-bottom:1px solid #f4c43044;position:relative;overflow:hidden}
   .vcWindow .windowTop::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,#ffd70099 0 6px,transparent 6px 16px);opacity:.5;animation:vcMarquee 2.4s linear infinite;height:2px;top:auto;bottom:0}
   @keyframes vcMarquee{0%{transform:translateX(0)}100%{transform:translateX(22px)}}
-  .vcWindow .windowTop h2{color:#ffd700;text-shadow:0 0 14px #f4c43077}
+  .vcWindow .windowTop h2{color:#ffd700;text-shadow:0 0 14px #f4c43077;letter-spacing:.03em}
   .vcWindow .windowCloseButton{background:linear-gradient(120deg,#f4c430,#b388ff);color:#150a22;border:0;border-radius:12px;font-weight:900}
 
-  .vcHeader{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px;border-radius:16px;background:#ffffff08;border:1px solid #f4c43033;margin-bottom:14px}
-  .vcBalance{font-weight:900;font-size:1.1rem;color:#ffe27a}
-  .vcJackpotBig{text-align:center;font-weight:900;color:#ffd700;text-shadow:0 0 16px #f4c43088;line-height:1.2}
-  .vcJackpotBig span{font-size:1.5rem}
+  .vcHeader{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:18px 20px;border-radius:18px;background:linear-gradient(135deg,#ffffff10,#ffffff05);border:1px solid #f4c43044;margin-bottom:18px;box-shadow:inset 0 0 30px #00000033}
+  .vcBalance{font-weight:900;font-size:1.3rem;color:#ffe27a}
+  .vcJackpotBig{text-align:center;font-weight:900;color:#ffd700;text-shadow:0 0 18px #f4c43099;line-height:1.25}
+  .vcJackpotBig span{font-size:1.9rem}
 
-  .vcStatsRow{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
-  .vcStatsRow div{background:#ffffff08;border:1px solid #ffffff14;border-radius:12px;padding:8px;text-align:center}
-  .vcStatsRow small{display:block;opacity:.65;font-size:10px;letter-spacing:.05em;text-transform:uppercase}
-  .vcStatsRow b{font-size:1.05rem;color:#ffe27a}
+  .vcStatsRow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+  .vcStatsRow div{background:#ffffff08;border:1px solid #ffffff14;border-radius:14px;padding:12px 8px;text-align:center}
+  .vcStatsRow small{display:block;opacity:.65;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase}
+  .vcStatsRow b{font-size:1.2rem;color:#ffe27a}
 
-  .vcTabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
-  .vcTabBtn{flex:1 1 auto;padding:9px 10px;border-radius:10px;border:1px solid #f4c43033;background:#ffffff08;color:#f4ecff;font-weight:800;font-size:12px;cursor:pointer}
+  .vcTabs{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+  .vcTabBtn{flex:1 1 auto;padding:12px 12px;border-radius:12px;border:1px solid #f4c43033;background:#ffffff08;color:#f4ecff;font-weight:800;font-size:13px;cursor:pointer;transition:transform .12s ease}
+  .vcTabBtn:hover{transform:translateY(-2px)}
   .vcTabBtn.active{background:linear-gradient(120deg,#f4c430,#b388ff);color:#150a22}
 
-  .vcMachine{background:linear-gradient(160deg,#1b0e2c,#0c0616);border:1px solid #f4c43033;border-radius:18px;padding:18px;text-align:center}
-  .vcReels{display:flex;justify-content:center;gap:10px;margin-bottom:12px}
-  .vcReel{width:58px;height:58px;display:flex;align-items:center;justify-content:center;font-size:28px;border-radius:12px;background:#000000aa;border:2px solid #f4c43055;box-shadow:inset 0 0 14px #00000088}
+  .vcMachine{position:relative;background:
+      repeating-linear-gradient(135deg,#00000010 0 2px,transparent 2px 14px),
+      radial-gradient(circle at 50% 0%,#2a1442,#1b0e2c 55%,#0c0616);
+    border:1px solid #f4c43044;border-radius:22px;padding:26px 22px;text-align:center;
+    box-shadow:inset 0 0 60px #00000055,0 20px 50px #00000044}
+  .vcMachine::before,.vcMachine::after{content:"";position:absolute;width:34px;height:34px;border:2px solid #f4c43066;opacity:.8}
+  .vcMachine::before{top:10px;left:10px;border-right:0;border-bottom:0;border-radius:10px 0 0 0}
+  .vcMachine::after{bottom:10px;right:10px;border-left:0;border-top:0;border-radius:0 0 10px 0}
+  .vcReels{display:flex;justify-content:center;gap:14px;margin-bottom:16px}
+  .vcReel{width:76px;height:76px;display:flex;align-items:center;justify-content:center;font-size:38px;border-radius:14px;background:#000000aa;border:2px solid #f4c43055;box-shadow:inset 0 0 18px #000000aa,0 4px 14px #00000055}
   .vcPulse{animation:vcPulse .5s ease}
   @keyframes vcPulse{0%{transform:scale(1.25);filter:brightness(1.8)}100%{transform:scale(1);filter:brightness(1)}}
-  .vcResultLine{min-height:20px;margin:8px 0 14px;font-weight:700;color:#ffe27a}
-  .vcBetRow{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;font-size:13px}
-  .vcChipsRow{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
-  .vcChip{width:44px;height:44px;border-radius:50%;border:2px solid #ffd70099;background:radial-gradient(circle at 35% 30%,#3a1d5c,#150a22);color:#ffd700;font-weight:900;font-size:11px;cursor:pointer}
-  .vcChipMax{border-color:#ff6ec7}
+  .vcResultLine{min-height:22px;margin:8px 0 16px;font-weight:700;color:#ffe27a;font-size:14.5px}
+  .vcBetRow{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px;margin-bottom:16px;font-size:13px}
+  .vcChipsRow{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .vcChip{width:52px;height:52px;border-radius:50%;cursor:pointer;color:#ffd700;font-weight:900;font-size:11.5px;position:relative;
+    border:2px dashed #ffd700bb;
+    background:radial-gradient(circle at 35% 30%,#4a2570,#150a22 70%);
+    box-shadow:0 5px 14px #00000066,inset 0 0 0 5px #150a22,inset 0 0 0 6px #ffd70044;
+    transition:transform .15s ease}
+  .vcChip:hover{transform:translateY(-3px)}
+  .vcChip:active{transform:translateY(0) scale(.95)}
+  .vcChipMax{border-color:#ff6ec7bb;box-shadow:0 5px 14px #00000066,inset 0 0 0 5px #150a22,inset 0 0 0 6px #ff6ec744}
   .vcCurrentBet b{color:#ffd700}
-  .vcSpinBtn{border:0;border-radius:14px;padding:14px 20px;font-weight:900;font-size:15px;cursor:pointer;background:linear-gradient(120deg,#ffd700,#ff6ec7,#b388ff);background-size:200% auto;color:#150a22;box-shadow:0 8px 24px #00000055}
-  .vcSpinBtn:disabled{opacity:.6;cursor:not-allowed}
-  .vcPaytable{margin-top:14px;text-align:left}
+  .vcSpinBtn{border:0;border-radius:16px;padding:17px 24px;font-weight:900;font-size:16px;letter-spacing:.03em;cursor:pointer;background:linear-gradient(120deg,#ffd700,#ff6ec7,#b388ff,#ffd700);background-size:300% auto;animation:vcShine 5s linear infinite;color:#150a22;box-shadow:0 10px 28px #00000066;width:min(360px,100%)}
+  @keyframes vcShine{0%{background-position:0% 50%}100%{background-position:300% 50%}}
+  .vcSpinBtn:disabled{opacity:.55;cursor:not-allowed;animation:none}
+  .vcBoardLabel{margin:18px 0 10px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#ffd70099;font-weight:800}
+  .vcPaytable{margin-top:16px;text-align:left}
   .vcPaytable summary{cursor:pointer;color:#ffd700;font-weight:800}
-  .vcPayTable{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px}
-  .vcPayTable td,.vcPayTable th{padding:6px 8px;border-bottom:1px solid #ffffff14;text-align:left}
+  .vcPayTable{width:100%;border-collapse:collapse;margin-top:8px;font-size:12.5px}
+  .vcPayTable td,.vcPayTable th{padding:7px 9px;border-bottom:1px solid #ffffff14;text-align:left}
 
-  .vcRouletteMachine{padding-top:26px}
-  .vcWheelWrap{position:relative;display:flex;justify-content:center;margin-bottom:16px}
-  .vcWheelPointer{position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:22px;color:#ffd700;text-shadow:0 0 10px #f4c43099;z-index:2}
-  .vcWheel{width:200px;height:200px;border-radius:50%;border:6px solid #f4c430;box-shadow:0 0 0 3px #150a22,0 0 40px #f4c43055,inset 0 0 30px #000000aa;position:relative}
-  .vcWheel::after{content:"";position:absolute;inset:38%;border-radius:50%;background:radial-gradient(circle at 35% 30%,#3a1d5c,#150a22);border:2px solid #ffd70099}
-  .vcBetSelected{margin-bottom:10px;font-size:13px;color:#e8dcff}
+  .vcRouletteMachine{padding-top:30px}
+  .vcWheelWrap{position:relative;display:flex;justify-content:center;margin-bottom:18px}
+  .vcWheelPointer{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:24px;color:#ffd700;text-shadow:0 0 10px #f4c43099;z-index:2}
+  .vcWheel{width:260px;height:260px;border-radius:50%;border:7px solid #f4c430;box-shadow:0 0 0 3px #150a22,0 0 50px #f4c43055,inset 0 0 34px #000000aa;position:relative}
+  .vcWheel::after{content:"";position:absolute;inset:36%;border-radius:50%;background:radial-gradient(circle at 35% 30%,#3a1d5c,#150a22);border:2px solid #ffd70099;box-shadow:0 0 20px #00000088}
+  .vcBetSelected{margin-bottom:4px;font-size:14px;color:#e8dcff}
   .vcBetSelected b{color:#ffd700}
-  .vcRouletteGridWrap{overflow-x:auto;margin-bottom:12px}
-  .vcRouletteGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(34px,1fr));gap:4px;min-width:380px}
-  .vcNumBtn{height:34px;border-radius:8px;border:1px solid #ffffff22;font-weight:800;font-size:12px;cursor:pointer;color:#fff}
-  .vcNum-red{background:#c1272d}
-  .vcNum-black{background:#141414}
-  .vcNum-green{background:#2e7d32}
-  .vcNumBtn.active,.vcOutBtn.active{outline:3px solid #ffd700;outline-offset:1px}
-  .vcOutsideBets{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:14px}
-  .vcOutBtn{padding:9px 12px;border-radius:10px;border:1px solid #f4c43033;background:#ffffff0d;color:#f4ecff;font-weight:800;font-size:12px;cursor:pointer}
-  .vcOutRed{background:#c1272d55;border-color:#c1272d}
-  .vcOutBlack{background:#14141477;border-color:#ffffff33}
+  .vcRouletteGridWrap{overflow-x:auto;margin-bottom:12px;padding-bottom:4px}
+  .vcRouletteGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(38px,1fr));gap:5px;min-width:420px}
+  .vcNumBtn{height:38px;border-radius:8px;border:1px solid #ffffff22;font-weight:800;font-size:12.5px;cursor:pointer;color:#fff;transition:transform .1s ease}
+  .vcNumBtn:hover{transform:translateY(-2px)}
+  .vcNum-red{background:linear-gradient(160deg,#d6323a,#901219)}
+  .vcNum-black{background:linear-gradient(160deg,#242424,#080808)}
+  .vcNum-green{background:linear-gradient(160deg,#379452,#134d24)}
+  .vcNumBtn.active,.vcOutBtn.active{outline:3px solid #ffd700;outline-offset:1px;box-shadow:0 0 14px #ffd70088}
+  .vcOutsideBets{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-bottom:16px}
+  .vcOutBtn{padding:10px 14px;border-radius:10px;border:1px solid #f4c43033;background:#ffffff0d;color:#f4ecff;font-weight:800;font-size:12.5px;cursor:pointer;transition:transform .1s ease}
+  .vcOutBtn:hover{transform:translateY(-2px)}
+  .vcOutRed{background:linear-gradient(160deg,#d6323a66,#90121966);border-color:#c1272d}
+  .vcOutBlack{background:linear-gradient(160deg,#24242477,#08080877);border-color:#ffffff33}
 
   .vcAchGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
   .vcAchCard{padding:12px;border-radius:14px;text-align:center;border:1px solid #ffffff14;background:#ffffff08}
@@ -674,6 +735,7 @@ function injectStyles(){
 }
 
 function init(){
+  injectFont();
   injectStyles();
   $("vipFolderCasinoBtn")?.addEventListener("click",openCasino);
   $("vipCasinoClose")?.addEventListener("click",closeCasino);
