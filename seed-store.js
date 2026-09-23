@@ -39,7 +39,30 @@ const SEEDS=[
  {id:"silkTreeSeed",name:"Persian Silk Sapling",emoji:"🌸",img:"assets/flowers/silkTree.png",price:30},
  {id:"japaneseMapleSeed",name:"Japanese Maple Sapling",emoji:"🍁",img:"assets/flowers/japaneseMaple.png",price:34},
  {id:"saucerMagnoliaSeed",name:"Saucer Magnolia Sapling",emoji:"🌷",img:"assets/flowers/saucerMagnolia.png",price:38},
- {id:"mikaelSeed",name:"Mikael's Favourite",emoji:"🍌",img:"assets/flowers/bananaTree.png",price:25,note:"Grows into something suspiciously banana-shaped."}
+ {id:"mikaelSeed",name:"Mikael's Favourite",emoji:"🍌",img:"assets/flowers/bananaTree.png",price:25,note:"Grows into something suspiciously banana-shaped."},
+ {id:"carnationSeed",name:"Carnation Seed",emoji:"🌸",img:"assets/flowers/carnation.png",price:4},
+ {id:"daisySeed",name:"Daisy Seed",emoji:"🌼",img:"assets/flowers/daisy.png",price:4},
+ {id:"poppySeed",name:"Poppy Seed",emoji:"🌺",img:"assets/flowers/poppy.png",price:4},
+ {id:"daffodilSeed",name:"Daffodil Seed",emoji:"🌼",img:"assets/flowers/daffodil.png",price:4},
+ {id:"pinkRoseSeed",name:"Pink Rose Seed",emoji:"🌹",img:"assets/flowers/pinkRose.png",price:5},
+ {id:"whiteRoseSeed",name:"White Rose Seed",emoji:"🤍",img:"assets/flowers/whiteRose.png",price:5},
+ {id:"hydrangeaSeed",name:"Hydrangea Seed",emoji:"🪻",img:"assets/flowers/hydrangea.png",price:5},
+ {id:"chrysanthemumSeed",name:"Chrysanthemum Seed",emoji:"🌼",img:"assets/flowers/chrysanthemum.png",price:5},
+ {id:"hibiscusSeed",name:"Hibiscus Seed",emoji:"🌺",img:"assets/flowers/hibiscus.png",price:5},
+ {id:"peonySeed",name:"Peony Seed",emoji:"🌺",img:"assets/flowers/peony.png",price:8},
+ {id:"irisSeed",name:"Iris Seed",emoji:"🪻",img:"assets/flowers/iris.png",price:8},
+ {id:"marigoldSeed",name:"Marigold Seed",emoji:"🌼",img:"assets/flowers/marigold.png",price:4},
+ {id:"babysBreathSeed",name:"Baby's Breath Seed",emoji:"🤍",img:"assets/flowers/babysBreath.png",price:4},
+ {id:"zinniaSeed",name:"Zinnia Seed",emoji:"🌼",img:"assets/flowers/zinnia.png",price:5},
+ {id:"camelliaSeed",name:"Camellia Seed",emoji:"🌸",img:"assets/flowers/camellia.png",price:5},
+ {id:"proteaSeed",name:"Protea Seed",emoji:"🌺",img:"assets/flowers/protea.png",price:9},
+ {id:"ranunculusSeed",name:"Ranunculus Seed",emoji:"🌷",img:"assets/flowers/ranunculus.png",price:9},
+ {id:"blueRoseSeed",name:"Blue Rose Seed",emoji:"💙",img:"assets/flowers/blueRose.png",price:24,note:"A rose that shouldn't exist in nature. LizzyOS made it exist anyway."},
+ {id:"weepingCherrySeed",name:"Weeping Cherry Sapling",emoji:"🌸",img:"assets/flowers/weepingCherry.png",price:26},
+ {id:"cacaoTreeSeed",name:"Cacao Sapling",emoji:"🍫",img:"assets/flowers/cacaoTree.png",price:20},
+ {id:"redwoodSeed",name:"Redwood Sapling",emoji:"🌲",img:"assets/flowers/redwood.png",price:32},
+ {id:"baobabSeed",name:"Baobab Sapling",emoji:"🌳",img:"assets/flowers/baobab.png",price:34},
+ {id:"wisteriaArchSeed",name:"Wisteria Sapling",emoji:"💜",img:"assets/flowers/wisteriaArch.png",price:40}
 ];
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
 const read=(k,f)=>{try{let v=localStorage.getItem(k);return v===null?f:JSON.parse(v)}catch(e){return f}};
@@ -1086,7 +1109,6 @@ function showLizzyAlert(r){
  };
 }
 async function checkPending(){
- if(document.hidden)return;
  // Mikael's own laptop MUST NOT consume or acknowledge Lizzy's notification.
  if(localStorage.getItem(ADMIN_DEVICE)==="yes")return;
  if(!$("reverseRedemptionModal")?.classList.contains("hidden")&&$("reverseRedemptionModal"))return;

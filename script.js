@@ -2823,13 +2823,26 @@ window.LizzyDailyRewardsV4={counts:{basic:BASIC.length,reverse:REVERSE.length,no
         bottlebrush:  {name:"Bottlebrush Tree",emoji:"🌳",img:"assets/flowers/bottlebrush.png",type:"tree",rarity:"Rare"},
         silkTree:     {name:"Persian Silk Tree",emoji:"🌸",img:"assets/flowers/silkTree.png",type:"tree",rarity:"Rare"},
         japaneseMaple:{name:"Japanese Maple",emoji:"🍁",img:"assets/flowers/japaneseMaple.png",type:"tree",rarity:"Epic"},
-        saucerMagnolia:{name:"Saucer Magnolia",emoji:"🌷",img:"assets/flowers/saucerMagnolia.png",type:"tree",rarity:"Legendary"}
+        saucerMagnolia:{name:"Saucer Magnolia",emoji:"🌷",img:"assets/flowers/saucerMagnolia.png",type:"tree",rarity:"Legendary"},
+        protea:      {name:"Protea",emoji:"🌺",img:"assets/flowers/protea.png",type:"flower",rarity:"Rare"},
+        zinnia:      {name:"Zinnia",emoji:"🌼",img:"assets/flowers/zinnia.png",type:"flower",rarity:"Uncommon"},
+        camellia:    {name:"Camellia",emoji:"🌸",img:"assets/flowers/camellia.png",type:"flower",rarity:"Uncommon"},
+        marigold:    {name:"Marigold",emoji:"🌼",img:"assets/flowers/marigold.png",type:"flower",rarity:"Common"},
+        babysBreath: {name:"Baby's Breath",emoji:"🤍",img:"assets/flowers/babysBreath.png",type:"flower",rarity:"Common"},
+        ranunculus:  {name:"Ranunculus",emoji:"🌷",img:"assets/flowers/ranunculus.png",type:"flower",rarity:"Rare"},
+        blueRose:    {name:"Blue Rose",emoji:"💙",img:"assets/flowers/blueRose.png",type:"flower",rarity:"Legendary"},
+        weepingCherry:{name:"Weeping Cherry Tree",emoji:"🌸",img:"assets/flowers/weepingCherry.png",type:"tree",rarity:"Rare"},
+        redwood:      {name:"Redwood Tree",emoji:"🌲",img:"assets/flowers/redwood.png",type:"tree",rarity:"Epic"},
+        baobab:       {name:"Baobab Tree",emoji:"🌳",img:"assets/flowers/baobab.png",type:"tree",rarity:"Epic"},
+        wisteriaArch: {name:"Wisteria Arch",emoji:"💜",img:"assets/flowers/wisteriaArch.png",type:"tree",rarity:"Legendary"},
+        cacaoTree:    {name:"Cacao Tree",emoji:"🍫",img:"assets/flowers/cacaoTree.png",type:"tree",rarity:"Epic"}
     };
 
     const STANDARD_FLOWERS = [
         "tulip","redRose","pinkRose","whiteRose","lilyValley","cryingLily","snapdragon",
         "sunflower","daisy","lavender","orchid","peony","hydrangea","carnation",
-        "daffodil","iris","chrysanthemum","poppy","forgetMeNot","hibiscus"
+        "daffodil","iris","chrysanthemum","poppy","forgetMeNot","hibiscus",
+        "protea","zinnia","camellia","marigold","babysBreath","ranunculus"
     ];
 
     const SEEDS = {
@@ -2852,7 +2865,30 @@ window.LizzyDailyRewardsV4={counts:{basic:BASIC.length,reverse:REVERSE.length,no
         bottlebrushSeed:{name:"Bottlebrush Sapling",emoji:"🌳",img:"assets/flowers/bottlebrush.png",plant:"bottlebrush"},
         silkTreeSeed:{name:"Persian Silk Sapling",emoji:"🌸",img:"assets/flowers/silkTree.png",plant:"silkTree"},
         japaneseMapleSeed:{name:"Japanese Maple Sapling",emoji:"🍁",img:"assets/flowers/japaneseMaple.png",plant:"japaneseMaple"},
-        saucerMagnoliaSeed:{name:"Saucer Magnolia Sapling",emoji:"🌷",img:"assets/flowers/saucerMagnolia.png",plant:"saucerMagnolia"}
+        saucerMagnoliaSeed:{name:"Saucer Magnolia Sapling",emoji:"🌷",img:"assets/flowers/saucerMagnolia.png",plant:"saucerMagnolia"},
+        carnationSeed:{name:"Carnation Seed",emoji:"🌸",img:"assets/flowers/carnation.png",plant:"carnation"},
+        daisySeed:{name:"Daisy Seed",emoji:"🌼",img:"assets/flowers/daisy.png",plant:"daisy"},
+        peonySeed:{name:"Peony Seed",emoji:"🌺",img:"assets/flowers/peony.png",plant:"peony"},
+        hydrangeaSeed:{name:"Hydrangea Seed",emoji:"🪻",img:"assets/flowers/hydrangea.png",plant:"hydrangea"},
+        chrysanthemumSeed:{name:"Chrysanthemum Seed",emoji:"🌼",img:"assets/flowers/chrysanthemum.png",plant:"chrysanthemum"},
+        poppySeed:{name:"Poppy Seed",emoji:"🌺",img:"assets/flowers/poppy.png",plant:"poppy"},
+        hibiscusSeed:{name:"Hibiscus Seed",emoji:"🌺",img:"assets/flowers/hibiscus.png",plant:"hibiscus"},
+        irisSeed:{name:"Iris Seed",emoji:"🪻",img:"assets/flowers/iris.png",plant:"iris"},
+        daffodilSeed:{name:"Daffodil Seed",emoji:"🌼",img:"assets/flowers/daffodil.png",plant:"daffodil"},
+        pinkRoseSeed:{name:"Pink Rose Seed",emoji:"🌹",img:"assets/flowers/pinkRose.png",plant:"pinkRose"},
+        whiteRoseSeed:{name:"White Rose Seed",emoji:"🤍",img:"assets/flowers/whiteRose.png",plant:"whiteRose"},
+        proteaSeed:{name:"Protea Seed",emoji:"🌺",img:"assets/flowers/protea.png",plant:"protea"},
+        zinniaSeed:{name:"Zinnia Seed",emoji:"🌼",img:"assets/flowers/zinnia.png",plant:"zinnia"},
+        camelliaSeed:{name:"Camellia Seed",emoji:"🌸",img:"assets/flowers/camellia.png",plant:"camellia"},
+        marigoldSeed:{name:"Marigold Seed",emoji:"🌼",img:"assets/flowers/marigold.png",plant:"marigold"},
+        babysBreathSeed:{name:"Baby's Breath Seed",emoji:"🤍",img:"assets/flowers/babysBreath.png",plant:"babysBreath"},
+        ranunculusSeed:{name:"Ranunculus Seed",emoji:"🌷",img:"assets/flowers/ranunculus.png",plant:"ranunculus"},
+        blueRoseSeed:{name:"Blue Rose Seed",emoji:"💙",img:"assets/flowers/blueRose.png",plant:"blueRose"},
+        weepingCherrySeed:{name:"Weeping Cherry Sapling",emoji:"🌸",img:"assets/flowers/weepingCherry.png",plant:"weepingCherry"},
+        redwoodSeed:{name:"Redwood Sapling",emoji:"🌲",img:"assets/flowers/redwood.png",plant:"redwood"},
+        baobabSeed:{name:"Baobab Sapling",emoji:"🌳",img:"assets/flowers/baobab.png",plant:"baobab"},
+        wisteriaArchSeed:{name:"Wisteria Sapling",emoji:"💜",img:"assets/flowers/wisteriaArch.png",plant:"wisteriaArch"},
+        cacaoTreeSeed:{name:"Cacao Sapling",emoji:"🍫",img:"assets/flowers/cacaoTree.png",plant:"cacaoTree"}
     };
     const COMMON_SEEDS = ["tulipSeed","roseSeed","snapdragonSeed","sunflowerSeed","lavenderSeed"];
     const GAME_SEEDS   = ["lilySeed","cryingLilySeed","orchidSeed","mysterySeed"];
@@ -4212,7 +4248,7 @@ if (typeof lizzyTelegramNotify === "function") window.lizzyTelegramNotify = lizz
  ["mickyBucs","lizzyMickyBucs","mickyBucsBalance","lizzyBankBalance"].forEach(k=>{if(localStorage.getItem(k)!==null)localStorage.setItem(k,String(n))});
  document.querySelectorAll("[data-micky-bucs-balance],#mickyBucsBalance,#bankBalance,#lizzyBankBalance").forEach(el=>el.textContent=String(n));
  window.dispatchEvent(new CustomEvent("mickyBucsBalanceChanged",{detail:{balance:n,source:"cloudflare"}}))}
- async function sync(){if(document.hidden)return;const e=endpoint();if(!e)return;try{const r=await fetch(e+(e.includes("?")?"&":"?")+"action=micky_bucs_balance",{cache:"no-store"}),d=await r.json();if(r.ok&&d.success)apply(d.balance)}catch(e){console.warn("Bank sync failed",e)}}
+ async function sync(){const e=endpoint();if(!e)return;try{const r=await fetch(e+(e.includes("?")?"&":"?")+"action=micky_bucs_balance",{cache:"no-store"}),d=await r.json();if(r.ok&&d.success)apply(d.balance)}catch(e){console.warn("Bank sync failed",e)}}
  window.syncMickyBucsFromServer=sync;window.addEventListener("load",()=>setTimeout(sync,800));window.addEventListener("focus",sync);
  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")sync()});setInterval(sync,60000);
 })();
@@ -5411,7 +5447,6 @@ const ANNOY_EFFECTS = {
 // ---- delivery loop ----
 let lastFiredAt = null;
 async function checkAnnoy() {
-  if (document.hidden) return;
   try {
     const d = await annoyApi("annoy_state");
     if (d.pending && d.pending.createdAt !== lastFiredAt && ANNOY_EFFECTS[d.pending.effect]) {
@@ -5445,7 +5480,6 @@ function injectStopButton() {
 document.addEventListener("DOMContentLoaded", () => {
   injectStopButton();
   checkAnnoy();
-  setInterval(checkAnnoy, 20000);
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) checkAnnoy(); });
+  setInterval(checkAnnoy, 6000);
 });
 })();
