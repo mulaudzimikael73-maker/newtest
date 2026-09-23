@@ -1,0 +1,25 @@
+MIZZYGRAM — PHASE 1
+====================
+
+NEW FILES (upload to the ROOT of the repo):
+  mizzygram.html
+  mizzygram.css
+  mizzygram.js
+
+UPDATED FILES (replace the existing ones):
+  coop.html   — adds a "MizzyGram" button next to Write Mikael / Chess
+  coop.css    — styles for that button (one line added at the end)
+
+Nothing else was touched. No Cloudflare Worker change needed.
+
+HOW IT WORKS
+  Open Our World -> tap the MizzyGram button.
+  Posts, likes, comments and the Follow state are saved in the browser
+  (IndexedDB) on the device Lizzy uses. Phase 1 is single-device; it will
+  move to the Worker when Mikael/other users are added.
+
+EDIT LIZZY'S PROFILE
+  Open mizzygram.js and change the CONFIG block at the top
+  (username, name, bio, avatar).
+
+After GitHub Pages deploys, hard refresh (Ctrl+Shift+R).
